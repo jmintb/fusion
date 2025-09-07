@@ -229,6 +229,8 @@ impl Ast {
                     process_block(&block_id, Some(block_id.into()), &mut queue);
                 }
 
+                NodeID::Declaration(DeclarationID::StructDeclaration(_)) => (),
+
                 // TODO: All expressions need to be "unpacked" and processed as they can contain blocks.
 
                 // NEXT: Get If Ellse statement snapshots to include if/else blocks
@@ -255,6 +257,8 @@ impl Ast {
                             queue.push_front(((*condition).into(), parent));
                             process_block(body, parent, &mut queue);
                         }
+                        Expression::StructFieldRef(_) => (),
+                        Expression::Struct(_) => (),
                         _expression => {
                             walker(db, expression_id.into(), parent, walker_context).unwrap();
                         }
@@ -292,6 +296,23 @@ impl NodeDatabase {
         bail!(format!(
             "failed to find function declaration ID for identifier {name:?}"
         ));
+    }
+
+    pub fn get_struct_declaration_id_from_name(
+        &self,
+        name: impl Into<Identifier>,
+    ) -> Result<StructDeclarationID> {
+        let identifier: Identifier = name.into();
+
+        let Some((struct_id, _)) = self
+            .struct_declarations
+            .iter()
+            .find(|declaration| declaration.1.identifier == identifier)
+        else {
+            bail!("failed to find struct declaration for name");
+        };
+
+        Ok(*struct_id)
     }
 
     fn new_module_declaration(&mut self, declaration: ModuleDeclaration) -> ModuleDeclarationID {

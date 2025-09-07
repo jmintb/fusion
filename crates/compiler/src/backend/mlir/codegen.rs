@@ -18,9 +18,10 @@ use melior::{
     ir::{
         attribute::{FlatSymbolRefAttribute, IntegerAttribute, StringAttribute, TypeAttribute},
         operation::OperationBuilder,
+        operation::OperationLike,
         r#type::{FunctionType, IntegerType, MemRefType},
-        Attribute, Block, BlockRef, Identifier, Location, Module, Operation, OperationRef, Region,
-        Type, Value, ValueLike,
+        Attribute, Block, BlockLike, BlockRef, Identifier, Location, Module, Operation,
+        OperationRef, Region, RegionLike, Type, Value, ValueLike,
     },
     pass::{self},
     utility::{register_all_dialects, register_all_llvm_translations},
@@ -97,12 +98,8 @@ fn run_mlir_passes(context: &Context, module: &mut Module) {
     let pass_manager = pass::PassManager::new(context);
     pass_manager.add_pass(pass::conversion::create_func_to_llvm());
 
-    pass_manager
-        .nested_under("func.func")
-        .add_pass(pass::conversion::create_arith_to_llvm());
-    pass_manager
-        .nested_under("func.func")
-        .add_pass(pass::conversion::create_index_to_llvm());
+    pass_manager.add_pass(pass::conversion::create_arith_to_llvm());
+    pass_manager.add_pass(pass::conversion::create_index_to_llvm());
     pass_manager.add_pass(pass::conversion::create_scf_to_control_flow());
     pass_manager.add_pass(pass::conversion::create_control_flow_to_llvm());
     pass_manager.add_pass(pass::conversion::create_finalize_mem_ref_to_llvm());
@@ -142,16 +139,30 @@ where
     'c: 'a,
 {
     match fusion_type {
-        types::Type::Pointer => llvm::r#type::opaque_pointer(context),
-        types::Type::String => llvm::r#type::opaque_pointer(context),
+        types::Type::Pointer => llvm::r#type::pointer(context, 0),
+        types::Type::String => llvm::r#type::pointer(context, 0),
         types::Type::Integer(_) => IntegerType::new(context, 32).into(),
         types::Type::Boolean => IntegerType::new(context, 1).into(),
         types::Type::Unit => llvm::r#type::void(context),
         types::Type::Array(array_type_id) => {
             let array_type = types.array_types.get(array_type_id).unwrap();
-            let element_type = as_mlir_type(array_type.element_type, context, types);
+            let fusion_element_type = types.comp_time_types.get(&array_type.element_type).unwrap();
+            let element_type = as_mlir_type(*fusion_element_type, context, types);
 
             MemRefType::new(element_type, &[array_type.length as i64], None, None).into()
+        }
+        types::Type::Struct(struct_type_id) => {
+            let struct_type = types.struct_types.get(struct_type_id).unwrap();
+            let field_types: Vec<melior::ir::Type> = struct_type
+                .field_types
+                .iter()
+                .map(|field_type_id| {
+                    let field_fusion_type = *types.comp_time_types.get(field_type_id).unwrap();
+                    as_mlir_type(field_fusion_type, context, types)
+                })
+                .collect();
+
+            llvm::r#type::r#struct(context, &field_types, true)
         }
         _ => todo!("unimplemented type to mlir type {:?}", fusion_type),
     }
@@ -168,7 +179,8 @@ where
     match fusion_type {
         types::Type::Array(array_type_id) => {
             let array_type = types.array_types.get(array_type_id).unwrap();
-            let element_type = as_mlir_type(array_type.element_type, context, types);
+            let fusion_element_type = types.comp_time_types.get(&array_type.element_type).unwrap();
+            let element_type = as_mlir_type(*fusion_element_type, context, types);
 
             MemRefType::new(element_type, &[array_type.length as i64], None, None)
         }
@@ -275,20 +287,23 @@ impl<'ctx> CodeGen<'ctx> {
     {
         let mut locals = HashMap::<Ssaid, Value<'c, 'a>>::new();
         let local_ir_variables = &self.program.ssa_variables[function_decl_id];
+        let function_types = self.program_types.get(function_decl_id).unwrap();
+
+        debug!("local types: {:#?}", function_types);
 
         for ssa_id in local_ir_variables.keys() {
+            if function_types.comp_time_types.contains_key(ssa_id) {
+                continue;
+            }
             let fusion_type = if self.program.ssa_variable_types.contains_key(ssa_id) {
                 self.program
                     .ssa_variable_types
                     .get(ssa_id)
                     .unwrap_or_else(|| panic!("failed to find type for: {:?}", ssa_id))
+            } else if function_types.variable_types.contains_key(ssa_id) {
+                &function_types.lookup_variable_type(*ssa_id).unwrap()
             } else {
-                self.program_types
-                    .get(function_decl_id)
-                    .unwrap()
-                    .variable_types
-                    .get(ssa_id)
-                    .unwrap()
+                continue; // TODO: we ignore variables without a type as we assume these variables for types. This can fail silently.
             };
 
             debug!("found type {:?} for ssa id {:?}", fusion_type, ssa_id);
@@ -329,8 +344,8 @@ impl<'ctx> CodeGen<'ctx> {
                             .append_operation(melior::dialect::arith::constant(
                                 self.context,
                                 IntegerAttribute::new(
-                                    int.value as i64, // TODO why do we need 4 here?
                                     IntegerType::new(self.context, 32).into(),
+                                    int.value as i64,
                                 )
                                 .into(),
                                 Location::unknown(self.context),
@@ -482,7 +497,7 @@ impl<'ctx> CodeGen<'ctx> {
                         self.context,
                         function_argument_types
                             .iter()
-                            .map(|_| llvm::r#type::opaque_pointer(self.context))
+                            .map(|_| llvm::r#type::pointer(self.context, 0))
                             .collect::<Vec<Type>>()
                             .as_slice(),
                         &[],
@@ -1287,8 +1302,7 @@ impl<'ctx> CodeGen<'ctx> {
                 current_block.append_operation(while_operation);
                 None
             }
-            Instruction::InitArray(items, result_receiver) => {
-                let _array_len = items.len();
+            Instruction::InitArray(items, result_receiver, _) => {
                 let item_values = items
                     .iter()
                     .map(|item| {
@@ -1302,8 +1316,8 @@ impl<'ctx> CodeGen<'ctx> {
                     .collect::<Result<Vec<Value>>>()?;
 
                 let program_types = self.program_types.get(&self.current_fn_decl_id).unwrap();
-                let array_type = program_types.variable_types.get(result_receiver).unwrap();
-                let memref_type = as_memref_type(*array_type, self.context, program_types);
+                let array_type = program_types.lookup_variable_type(*result_receiver)?;
+                let memref_type = as_memref_type(array_type, self.context, program_types);
 
                 let array_ptr = melior::dialect::memref::alloca(
                     self.context,
@@ -1325,8 +1339,8 @@ impl<'ctx> CodeGen<'ctx> {
                         .append_operation(melior::dialect::index::constant(
                             self.context,
                             IntegerAttribute::new(
-                                index as i64,
                                 melior::ir::Type::index(self.context),
+                                index as i64,
                             ),
                             location,
                         ))
@@ -1351,11 +1365,110 @@ impl<'ctx> CodeGen<'ctx> {
                 );
                 current_block.append_operation(store_op);
 
-                // MOVE: move result reciever init to locals generation.
-
-                // variable_store.insert(*result_receiver, ptr_val);
-
                 Some(ptr_val)
+            }
+            Instruction::StructInit {
+                field_values,
+                receiver,
+                ..
+            } => {
+                let field_value_ptrs: Vec<Value> = field_values
+                    .iter()
+                    .map(|field_value_id| {
+                        self.gen_variable_load(
+                            *field_value_id,
+                            block_references,
+                            variable_store,
+                            current_block_id,
+                        )
+                    })
+                    .collect::<Result<Vec<Value>>>()?;
+
+                let Ok(mut mlir_struct_value) = self.gen_variable_load(
+                    *receiver,
+                    block_references,
+                    variable_store,
+                    current_block_id,
+                ) else {
+                    bail!("failed to find struct {}", receiver.0);
+                };
+
+                for (i, field_value_ptr) in field_value_ptrs.iter().enumerate() {
+                    let insertion_instruction = llvm::insert_value(
+                        self.context,
+                        mlir_struct_value,
+                        melior::ir::attribute::DenseI64ArrayAttribute::new(
+                            self.context,
+                            &[i as i64],
+                        ),
+                        *field_value_ptr,
+                        location,
+                    );
+
+                    mlir_struct_value = current_block
+                        .append_operation(insertion_instruction)
+                        .result(0)
+                        .unwrap()
+                        .into();
+                }
+
+                let mlir_struct_ref = variable_store[receiver];
+
+                let store_op = melior::dialect::memref::store(
+                    mlir_struct_value,
+                    mlir_struct_ref,
+                    &[],
+                    melior::ir::Location::unknown(self.context),
+                );
+                current_block.append_operation(store_op);
+
+                Some(mlir_struct_ref)
+            }
+            Instruction::ReadStructField {
+                r#struct,
+                field,
+                receiver,
+            } => {
+                let program_types = self.program_types.get(&self.current_fn_decl_id).unwrap();
+                let field_index = program_types.calculate_struct_field_position(
+                    *r#struct,
+                    *field,
+                    &self.program,
+                )?;
+
+                let Ok(struct_ptr) = self.gen_variable_load(
+                    *r#struct,
+                    block_references,
+                    variable_store,
+                    current_block_id,
+                ) else {
+                    bail!("failed to find struct {}", r#struct.0);
+                };
+
+                let reciver_val = variable_store[receiver];
+                let field_type = program_types.lookup_variable_type(*receiver)?;
+                let field_mlir_type = as_mlir_type(field_type, self.context, program_types);
+
+                let read_instruction = llvm::extract_value(
+                    self.context,
+                    struct_ptr,
+                    melior::ir::attribute::DenseI64ArrayAttribute::new(
+                        self.context,
+                        &[field_index as i64],
+                    ),
+                    field_mlir_type,
+                    location,
+                );
+
+                let read_value: Value = current_block
+                    .append_operation(read_instruction)
+                    .result(0)
+                    .unwrap()
+                    .into();
+                let store_op = memref::store(read_value, reciver_val, &[], location);
+                current_block.append_operation(store_op);
+
+                Some(read_value)
             }
             Instruction::ArrayLookup {
                 array,
@@ -1395,15 +1508,6 @@ impl<'ctx> CodeGen<'ctx> {
                     .unwrap()
                     .into();
 
-                let _result_ptr = melior::dialect::memref::alloca(
-                    self.context,
-                    MemRefType::new(gep_op_2.r#type(), &[], None, None),
-                    &[],
-                    &[],
-                    None,
-                    Location::unknown(self.context),
-                );
-
                 let ptr_val: Value = variable_store[result];
 
                 let store_op = melior::dialect::memref::store(
@@ -1414,23 +1518,15 @@ impl<'ctx> CodeGen<'ctx> {
                 );
                 current_block.append_operation(store_op);
 
-                // MOVE: move result init to locals calculation
-                // variable_store.insert(*result, ptr_val);
-
                 Some(ptr_val)
             }
-            Instruction::AnonymousValue(id) => Some(self.gen_variable_load(
-                *id,
-                block_references,
-                variable_store,
-                current_block_id,
-            )?),
-            Instruction::MutBorrow(_id)
-            | Instruction::MutBorrowEnd(_id)
-            | Instruction::BorrowEnd(_id)
-            | Instruction::Move(_id)
-            | Instruction::Borrow(_id)
-            | Instruction::Drop(_id) => None,
+            Instruction::AnonymousValue(_) => None,
+            Instruction::MutBorrow(_)
+            | Instruction::MutBorrowEnd(_)
+            | Instruction::BorrowEnd(_)
+            | Instruction::Move(_)
+            | Instruction::Borrow(_)
+            | Instruction::Drop(_) => None,
             _ => panic!("instruction not implemented yet {:?}", instruction),
         };
 
@@ -1501,7 +1597,7 @@ impl<'ctx> CodeGen<'ctx> {
                 Identifier::new(self.context, "global_name"),
                 FlatSymbolRefAttribute::new(self.context, &id).into(),
             )])
-            .add_results(&[llvm::r#type::opaque_pointer(self.context)])
+            .add_results(&[llvm::r#type::pointer(self.context, 0)])
             .build()?;
 
         Ok(current_block.append_operation(address_op))

@@ -4,49 +4,49 @@ expression: "format!(\"{}\", ir_progam)"
 ---
 IR:
 fn 17:
-block_1
-0: 2_val = fnarg
-1: 3_len = fnarg
-2: 4_anonymous := Int(1)
-3: borrow(4_anonymous)
-4: 5_anonymous := "w"
-5: borrow(5_anonymous)
-6: receiver_Ssaid(6) = @0( let 4_anonymous, let 5_anonymous,)
-7: borrow_end(4_anonymous)
-8: borrow_end(5_anonymous)
-9: 7_stdoutptr = 6_fdopen_result
-10: move(6_fdopen_result)
-11: borrow(2_val)
-12: borrow(3_len)
-13: 8_anonymous := Int(1)
-14: borrow(8_anonymous)
-15: borrow(7_stdoutptr)
-16: receiver_Ssaid(9) = @2( let 2_val, let 3_len, let 8_anonymous, let 7_stdoutptr,)
-17: borrow_end(2_val)
-18: borrow_end(3_len)
-19: borrow_end(8_anonymous)
-20: borrow_end(7_stdoutptr)
+block_4
+0: 5_val = fnarg
+1: 6_len = fnarg
+2: 7_anonymous := Int(1)
+3: borrow(7_anonymous)
+4: 8_anonymous := "w"
+5: borrow(8_anonymous)
+6: receiver_Ssaid(9) = @0( let 7_anonymous, let 8_anonymous,)
+7: borrow_end(7_anonymous)
+8: borrow_end(8_anonymous)
+9: 10_stdoutptr = 9_fdopen_result
+10: move(9_fdopen_result)
+11: borrow(5_val)
+12: borrow(6_len)
+13: 11_anonymous := Int(1)
+14: borrow(11_anonymous)
+15: borrow(10_stdoutptr)
+16: receiver_Ssaid(12) = @2( let 5_val, let 6_len, let 11_anonymous, let 10_stdoutptr,)
+17: borrow_end(5_val)
+18: borrow_end(6_len)
+19: borrow_end(11_anonymous)
+20: borrow_end(10_stdoutptr)
 21: return
 
 fn 28:
-block_10
-0: 11_anonymous := "hello world!"
-1: 12_message = 11_anonymous
-2: move(11_anonymous)
-3: move(12_message)
-4: 13_anonymous := Int(12)
-5: borrow(13_anonymous)
-6: @31( owned 12_message, let 13_anonymous,)
-7: borrow_end(13_anonymous)
-8: move(12_message)
-9: 14_anonymous := Int(12)
-10: borrow(14_anonymous)
-11: @31( owned 12_message, let 14_anonymous,)
-12: borrow_end(14_anonymous)
+block_13
+0: 14_anonymous := "hello world!"
+1: 15_message = 14_anonymous
+2: move(14_anonymous)
+3: move(15_message)
+4: 16_anonymous := Int(12)
+5: borrow(16_anonymous)
+6: @31( owned 15_message, let 16_anonymous,)
+7: borrow_end(16_anonymous)
+8: move(15_message)
+9: 17_anonymous := Int(12)
+10: borrow(17_anonymous)
+11: @31( owned 15_message, let 17_anonymous,)
+12: borrow_end(17_anonymous)
 13: return
 
 fn 31:
-block_15
-0: 16_message = fnarg
-1: 17_len = fnarg
+block_18
+0: 19_message = fnarg
+1: 20_len = fnarg
 2: return

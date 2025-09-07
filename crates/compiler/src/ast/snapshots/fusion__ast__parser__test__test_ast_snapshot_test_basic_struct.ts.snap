@@ -1,0 +1,24 @@
+---
+source: crates/compiler/src/ast/parser.rs
+expression: "format!(\"{}\", ast.0.to_string(&ast.1))"
+---
+root, [
+    [
+        "module_20",
+    ],
+], [
+    [
+        "main",
+    ],
+], [
+    [
+        "block_18",
+    ],
+], [
+    [
+        "val aFoo =  ",
+        "val sum = Operation( + ) ",
+        "call print([\"\\\"struct fields sum is 6\\\"\", \"Int(22)\"])",
+        "call print([\"\\\"\\\\n\\\"\", \"Int(2)\"])",
+    ],
+]

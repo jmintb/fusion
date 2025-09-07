@@ -136,11 +136,17 @@ fn check_instruction(
         Instruction::GreaterThan(_, _, result) => {
             variable_states.insert(*result, VariableState::Ready);
         }
-        Instruction::InitArray(_, result) => {
+        Instruction::InitArray(_, result, _) => {
             variable_states.insert(*result, VariableState::Ready);
+        }
+        Instruction::StructInit { receiver, .. } => {
+            variable_states.insert(*receiver, VariableState::Ready);
         }
         Instruction::ArrayLookup { result, .. } => {
             variable_states.insert(*result, VariableState::Ready);
+        }
+        Instruction::ReadStructField { receiver, .. } => {
+            variable_states.insert(*receiver, VariableState::Ready);
         }
         Instruction::AssignFnArg(id, _position) => {
             variable_states.insert(*id, VariableState::Ready);

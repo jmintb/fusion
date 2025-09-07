@@ -1,0 +1,7 @@
+---
+source: crates/compiler/src/analysis/type_evaluation.rs
+expression: "format!(\"{:#?}\", analysis_result)"
+---
+Err(
+    "struct field value has wrong type",
+)

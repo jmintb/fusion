@@ -28,8 +28,8 @@ impl Type {
         types: &BTreeMap<TSIdentifier, Type>,
     ) -> melior::ir::Type<'c> {
         match self {
-            Type::Pointer => llvm::r#type::opaque_pointer(context),
-            Type::String => llvm::r#type::opaque_pointer(context),
+            Type::Pointer => llvm::r#type::pointer(context, 0),
+            Type::String => llvm::r#type::pointer(context, 0),
             Type::Integer => IntegerType::new(context, 32).into(),
             Type::Unit => llvm::r#type::void(context),
             Type::Struct(StructType {

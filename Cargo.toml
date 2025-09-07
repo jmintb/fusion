@@ -2,3 +2,11 @@
 resolver = "3"
 members = ["crates/*", "xtask"]
 
+[patch.crates-io]
+# Currently there is an issue with building tblgen-rs on Nix. 
+# Some warnings are emitted from clang and tblgen-rs passes
+# flags which cause clang to warnings as errors.
+# Therefore we created a fork without this flag, until a permanent
+# solution is found.
+tblgen = { git = "https://github.com/jmintb/tblgen-rs" } # 
+

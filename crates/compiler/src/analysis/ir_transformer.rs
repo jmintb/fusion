@@ -1,7 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use crate::ir::{Block, IrProgram, Ssaid, Variable};
-use crate::types;
 
 use crate::{control_flow_graph::ControlFlowGraph, ir::BlockId};
 use anyhow::Result;
@@ -20,7 +19,7 @@ pub struct IrInterpreter<'a, Ctx> {
     pub ssa_variables: BTreeMap<Ssaid, Variable>,
     context: Ctx,
     reverse_traversel: bool,
-    pub ssa_variable_types: BTreeMap<Ssaid, types::Type>,
+    ir_program: IrProgram,
 }
 
 pub struct ReverseCycleAwareBlockIterator {
@@ -222,7 +221,7 @@ impl ControlFlowGraph<BlockId> {
 pub struct TransformContext {
     pub scope: IrScope,
     pub ssa_variables: BTreeMap<Ssaid, Variable>,
-    pub ssa_variable_types: BTreeMap<Ssaid, types::Type>,
+    pub ir_program: IrProgram,
 }
 
 type TransformFn<Ctx> =
@@ -240,7 +239,27 @@ impl<'a, Ctx: Clone + Default> IrInterpreter<'a, Ctx> {
             ssa_variables: program.get_all_ssa_variables(),
             context: Ctx::default(),
             reverse_traversel: false,
-            ssa_variable_types: program.ssa_variable_types.clone(),
+            ir_program: program.clone(),
+        }
+    }
+
+    pub fn new_with_ctx(
+        control_flow_graph: &'a ControlFlowGraph<BlockId>,
+        program: IrProgram,
+        ctx: Ctx,
+    ) -> Self {
+        let scope = IrScope {
+            blocks: program.blocks.clone(),
+            control_flow_graph: control_flow_graph.clone(),
+        };
+
+        Self {
+            control_flow_graph,
+            scope,
+            ssa_variables: program.get_all_ssa_variables(),
+            context: ctx,
+            reverse_traversel: false,
+            ir_program: program.clone(),
         }
     }
 
@@ -258,7 +277,7 @@ impl<'a, Ctx: Clone + Default> IrInterpreter<'a, Ctx> {
             ssa_variables: program.get_all_ssa_variables(),
             context: Ctx::default(),
             reverse_traversel: true,
-            ssa_variable_types: program.ssa_variable_types.clone(),
+            ir_program: program.clone(),
         }
     }
 
@@ -266,7 +285,7 @@ impl<'a, Ctx: Clone + Default> IrInterpreter<'a, Ctx> {
         let mut ctx = TransformContext {
             scope: self.scope.clone(),
             ssa_variables: self.ssa_variables.clone(),
-            ssa_variable_types: self.ssa_variable_types.clone(),
+            ir_program: self.ir_program.clone(),
         };
 
         if self.reverse_traversel {

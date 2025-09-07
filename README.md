@@ -1,6 +1,40 @@
-# [Lang Name]
+# Fusion
 
-[Lang Name] is an exploratory programming language which will eventually turn into a  programming language forefilling the following properties. 
+### A taste of Fusion
+
+```rust
+
+effect Allocator = fn<T>(size: isize): T 
+effect GpuScheduler = fn() ???
+
+fn main() {
+
+    val arenaAllocator: Allocator = std::allocator::Arena::new()
+
+    val matrix = initMatrix() with {
+        allocator: arenaAllocator
+    }
+
+    val gpuScheduler: GpuScheduler = std::scheduler:GpuScheduler::new(); 
+    val matrix2 = matMulOnGpu with {
+        gpuScheduler: gpuScheduler
+    }
+}
+
+fn initMatrix() Matrix<3, 4> with allocator: Allocator {
+    Matrix<3, 4>::new()    
+}
+
+fn matMulOnGpu(move matrix: Matrix) Matrix with gpuScheduler: GpuScheduler {
+     
+}
+
+
+```
+
+
+
+[Lang Name] is an exploratory programming language which will eventually turn into a programming language forefilling the following properties. 
 
 ### Goals
 

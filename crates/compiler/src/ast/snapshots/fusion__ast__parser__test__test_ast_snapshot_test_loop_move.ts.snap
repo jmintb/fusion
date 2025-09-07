@@ -1,0 +1,37 @@
+---
+source: crates/compiler/src/ast/parser.rs
+expression: "format!(\"{}\", ast.0.to_string(&ast.1))"
+---
+root, [
+    [
+        "module_22",
+    ],
+], [
+    [
+        "main",
+        "move_val",
+    ],
+], [
+    [
+        "block_20",
+    ],
+    [
+        "block_17",
+    ],
+], [
+    [
+        "return",
+    ],
+    [
+        "value = \"test\" ",
+        "i = Int(0) ",
+        "block_7",
+        "call move_val([\"Variable(value)\"])",
+        "i = Operation(Variable(i) + Int(1)) ",
+        "return",
+    ],
+], [
+    [
+        "Operation(Variable(i) < Int(2))",
+    ],
+]

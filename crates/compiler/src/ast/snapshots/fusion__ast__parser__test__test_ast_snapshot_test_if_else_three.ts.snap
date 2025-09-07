@@ -1,0 +1,51 @@
+---
+source: crates/compiler/src/ast/parser.rs
+expression: "format!(\"{}\", ast.0.to_string(&ast.1))"
+---
+root, [
+    [
+        "module_24",
+    ],
+], [
+    [
+        "main",
+        "move_val",
+        "borrow_val",
+    ],
+], [
+    [
+        "block_22",
+    ],
+    [
+        "block_19",
+    ],
+    [
+        "block_16",
+    ],
+], [
+    [
+        "return",
+    ],
+    [
+        "return",
+    ],
+    [
+        "test = \"222\" ",
+        "Operation(Int(1) < Int(0))",
+        "if_else_start",
+        "call borrow_val([\"Variable(test)\"])",
+        "return",
+    ],
+], [
+    [
+        "block_7",
+        "block_11",
+    ],
+], [
+    [
+        "call print([\"Variable(test)\", \"Int(3)\"])",
+    ],
+    [
+        "call move_val([\"Variable(test)\"])",
+    ],
+]

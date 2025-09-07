@@ -1,0 +1,31 @@
+---
+source: crates/compiler/src/ast/parser.rs
+expression: "format!(\"{}\", ast.0.to_string(&ast.1))"
+---
+root, [
+    [
+        "module_14",
+    ],
+], [
+    [
+        "main",
+        "consume",
+    ],
+], [
+    [
+        "block_12",
+    ],
+    [
+        "block_9",
+    ],
+], [
+    [
+        "return",
+    ],
+    [
+        "message = \"hello world!\" ",
+        "call consume([\"Variable(message)\", \"Int(12)\"])",
+        "call consume([\"Variable(message)\", \"Int(12)\"])",
+        "return",
+    ],
+]
