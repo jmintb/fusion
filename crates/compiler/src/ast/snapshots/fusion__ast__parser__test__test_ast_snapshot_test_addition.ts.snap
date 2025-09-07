@@ -1,5 +1,5 @@
 ---
-source: src/ast/parser.rs
+source: crates/compiler/src/ast/parser.rs
 expression: "format!(\"{}\", ast.0.to_string(&ast.1))"
 ---
 root, [

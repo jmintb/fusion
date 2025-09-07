@@ -1,5 +1,5 @@
 ---
-source: src/ir.rs
+source: crates/compiler/src/ir.rs
 expression: "format!(\"{}\", control_flow_graph)"
 ---
-entry point: block_22
+entry point: block_25

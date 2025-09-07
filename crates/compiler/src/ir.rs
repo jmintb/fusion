@@ -5,13 +5,16 @@ use std::{
 
 use tracing::debug;
 
+use crate::analysis::type_evaluation::TypeName;
+use crate::ast::nodes::Type;
+use crate::types::FlatEntityStore;
 use crate::{
     ast::{
         identifiers::{BlockID, ExpressionID, FunctionDeclarationID, StatementID},
         nodes::{
             AccessModes, Array, ArrayLookup, Assign, Assignment, Call, Expression, FunctionArg,
             Identifier, IfElseStatement, IfStatement, Operation, Operator, Return, StructFieldPath,
-            StructInit, Type, Value, While,
+            StructInit, Value, While,
         },
         Ast, NodeDatabase,
     },
@@ -59,6 +62,9 @@ pub struct IrProgram {
     pub external_function_declaraitons: Vec<FunctionDeclarationID>,
     pub ssa_variable_types: BTreeMap<Ssaid, types::Type>,
     block_results: BTreeMap<BlockId, Ssaid>,
+    pub top_level_block: BlockId,
+    pub struct_field_identifier: Vec<Identifier>,
+    pub type_names: FlatEntityStore<TypeName, usize>,
 }
 
 impl IrProgram {
@@ -144,7 +150,7 @@ pub enum Instruction {
     Subtraction(Ssaid, Ssaid, Ssaid),
     GreaterThan(Ssaid, Ssaid, Ssaid),
     LessThan(Ssaid, Ssaid, Ssaid),
-    InitArray(Vec<Ssaid>, Ssaid), // TODO: Could this be something more general like calling a function?, do we need access modes here, in in function calls?
+    InitArray(Vec<Ssaid>, Ssaid, Ssaid), // TODO: Could this be something more general like calling a function?, do we need access modes here, in in function calls?
     ArrayLookup {
         array: Ssaid,
         index: Ssaid,
@@ -168,6 +174,30 @@ pub enum Instruction {
         condition: BlockId,
         body: BlockId,
     },
+    StructInit {
+        struct_identifier: usize,
+        field_values: Vec<Ssaid>,
+        receiver: Ssaid,
+    },
+    StructDeclaration {
+        receiver: Ssaid,
+        field_name_ids: Vec<usize>,
+        field_type_name_ids: Vec<usize>,
+        type_name_id: usize,
+    },
+    ReadStructField {
+        r#struct: Ssaid,
+        field: usize,
+        receiver: Ssaid,
+    },
+    DeclareIntegerType {
+        receiver: Ssaid,
+        type_name_id: usize,
+    },
+    DeclareStringType {
+        receiver: Ssaid,
+        type_name_id: usize,
+    },
 }
 
 impl Instruction {
@@ -185,6 +215,8 @@ impl Instruction {
         static_ssa_values: &HashMap<Ssaid, Value>,
     ) -> String {
         match self {
+            Self::DeclareIntegerType { .. } => "".to_string(),
+            Self::DeclareStringType { .. } => "".to_string(),
             Self::WhileLoop {
                 condition, body, ..
             } => {
@@ -208,7 +240,50 @@ impl Instruction {
                         .fold(String::new(), |acc, next| format!("{} {}", acc, next))
                 )
             }
-            Self::InitArray(items, result) => {
+            Self::ReadStructField {
+                r#struct,
+                field,
+                receiver,
+            } => {
+                format!(
+                    "struct_field_read_resul_{:?} = {:?}_FieldRead.{:?}",
+                    receiver, r#struct, field
+                )
+            }
+            Self::StructDeclaration {
+                field_name_ids,
+                receiver,
+                ..
+            } => {
+                format!(
+                    "struct_declaration_result_{:?} = StructDeclaration({})",
+                    receiver,
+                    field_name_ids
+                        .iter()
+                        .map(|variable_id| format!("{},", variable_id))
+                        .fold(String::new(), |acc, next| format!("{} {}", acc, next))
+                )
+            }
+            Self::StructInit {
+                struct_identifier,
+                field_values,
+                receiver,
+            } => {
+                format!(
+                    "struct_init_result_{:?} = StructInit<{:?}>[{}]",
+                    receiver,
+                    struct_identifier,
+                    field_values
+                        .iter()
+                        .map(|variable_id| format!(
+                            "{}_{},",
+                            variable_id.0,
+                            ssa_variables.get(variable_id).unwrap().original_variable.0
+                        ))
+                        .fold(String::new(), |acc, next| format!("{} {}", acc, next))
+                )
+            }
+            Self::InitArray(items, result, _) => {
                 format!(
                     "array_init_result_{:?} = InitArray[{}]",
                     result,
@@ -410,6 +485,9 @@ pub struct IrGenerator {
     external_function_declaraitons: Vec<FunctionDeclarationID>,
     expression_types: HashMap<ExpressionID, types::Type>,
     ssaid_variable_types: BTreeMap<Ssaid, types::Type>,
+    type_ssaids: BTreeMap<crate::ast::nodes::Type, Ssaid>,
+    struct_field_identifier: Vec<Identifier>,
+    type_names: FlatEntityStore<TypeName, usize>,
 }
 
 use crate::types;
@@ -447,7 +525,15 @@ impl IrGenerator {
             expression_types,
             ssaid_variable_types: BTreeMap::new(),
             block_results: BTreeMap::new(),
+            type_ssaids: BTreeMap::new(),
+            struct_field_identifier: Vec::new(),
+            type_names: FlatEntityStore::new(),
         }
+    }
+
+    fn add_new_struct_field_identifier(&mut self, identifier: Identifier) -> usize {
+        self.struct_field_identifier.push(identifier);
+        self.struct_field_identifier.len() - 1
     }
 
     fn store_current_fn_variable(&mut self, id: Ssaid, ssa_var: Variable) {
@@ -470,11 +556,15 @@ impl IrGenerator {
     fn add_ssa_variable(&mut self, original_variable_id: Identifier) -> Ssaid {
         let id = self.new_ssa_id();
         let ssa_var = Variable {
-            original_variable: original_variable_id,
+            original_variable: original_variable_id.clone(),
             id,
         };
 
         self.store_current_fn_variable(id, ssa_var);
+        debug!(
+            "add ssa variable for identifier: {:?} : {:?}",
+            original_variable_id, id
+        );
 
         id
     }
@@ -562,15 +652,82 @@ impl IrGenerator {
     // TODO NEXT: make this parallel down to function level with CFG.
     // TODO NEXT: We need to have types for each SSAID
 
+    fn convert_top_level(&mut self) -> BlockId {
+        let builtin_integer_type = self.add_ssa_variable(Identifier::new("integer".to_string()));
+        let builtin_str_type = self.add_ssa_variable(Identifier::new("str".to_string()));
+
+        let top_level_block = self.add_block();
+        let integer_type_name_id = self.type_names.insert(Type::SignedInteger);
+        self.add_instruction(
+            top_level_block,
+            Instruction::DeclareIntegerType {
+                receiver: builtin_integer_type,
+                type_name_id: integer_type_name_id,
+            },
+        );
+
+        let string_type_name_id = self.type_names.insert(Type::String);
+        self.add_instruction(
+            top_level_block,
+            Instruction::DeclareStringType {
+                receiver: builtin_str_type,
+                type_name_id: string_type_name_id,
+            },
+        );
+
+        for struct_declaration in self.node_db.struct_declarations.clone().iter() {
+            let ssa_var = self.add_ssa_variable(struct_declaration.1.identifier.clone());
+            let field_type_name_ids: Vec<usize> = struct_declaration
+                .1
+                .fields
+                .iter()
+                .map(|field| self.type_names.insert(field.r#type.clone()))
+                .collect();
+
+            let field_name_ids: Vec<usize> = struct_declaration
+                .1
+                .fields
+                .iter()
+                .map(|field_identifier| {
+                    self.add_new_struct_field_identifier(field_identifier.identifier.clone())
+                })
+                .collect();
+
+            let struct_type_name_id = self
+                .type_names
+                .insert(Type::Named(struct_declaration.1.identifier.clone()));
+            self.add_instruction(
+                top_level_block,
+                Instruction::StructDeclaration {
+                    receiver: ssa_var,
+                    field_name_ids,
+                    field_type_name_ids,
+                    type_name_id: struct_type_name_id,
+                },
+            );
+            self.type_ssaids.insert(
+                Type::Named(struct_declaration.1.identifier.clone()),
+                ssa_var,
+            );
+        }
+
+        top_level_block
+    }
+
     pub fn convert_to_ssa(mut self) -> IrProgram {
         // TODO: Switch from HashMa to Vec to avoid having to perform this conversion.
+
+        let top_level_block = self.convert_top_level();
+
         let mut function_names: Vec<FunctionDeclarationID> = self
             .node_db
             .function_declarations
             .clone()
             .into_keys()
             .collect();
+
         function_names.sort();
+
         for function_declaration in function_names {
             self.convert_function_declaration(function_declaration);
         }
@@ -587,6 +744,9 @@ impl IrGenerator {
             external_function_declaraitons: self.external_function_declaraitons,
             ssa_variable_types: self.ssaid_variable_types,
             block_results: self.block_results,
+            struct_field_identifier: self.struct_field_identifier,
+            top_level_block,
+            type_names: self.type_names,
         }
     }
 
@@ -745,6 +905,7 @@ impl IrGenerator {
             .get(&expression_id)
             .unwrap()
             .clone();
+        debug!("converting expression {:?}", expression);
         match expression {
             Expression::Block(ast_block) => {
                 current_block = self.convert_block(ast_block, current_block);
@@ -883,20 +1044,58 @@ impl IrGenerator {
             },
 
             Expression::Struct(StructInit {
-                struct_id: _,
+                struct_id,
                 field_values,
             }) => {
+                let mut field_vars: Vec<Ssaid> = Vec::new();
+
                 for field in field_values {
-                    (current_block, _) = self.convert_expression(field, current_block);
+                    let (latest_block, Some(field_value)) =
+                        self.convert_expression(field, current_block)
+                    else {
+                        panic!("expected expression to return a value for struct field");
+                    };
+
+                    current_block = latest_block;
+                    field_vars.push(field_value);
                 }
+
+                let reciever_ssaid =
+                    self.add_ssa_variable(Identifier::new("struct_init_result".to_string()));
+
+                let struct_type_name_id = self.type_names.insert(Type::Named(struct_id));
+
+                let instruction = Instruction::StructInit {
+                    struct_identifier: struct_type_name_id,
+                    field_values: field_vars,
+                    receiver: reciever_ssaid,
+                };
+
+                self.add_instruction(current_block, instruction);
+
+                return (current_block, Some(reciever_ssaid));
             }
 
             Expression::StructFieldRef(StructFieldPath {
                 struct_indentifier,
-                field_identifier: _,
+                field_identifier,
             }) => {
-                let ssa_var = self.latest_gen_variable(struct_indentifier).unwrap();
-                self.add_instruction(current_block, self.get_access_instruction(ssa_var));
+                let struct_ssaid = self.latest_gen_variable(struct_indentifier).unwrap();
+                let field_index = self.add_new_struct_field_identifier(field_identifier);
+
+                let receiver =
+                    self.add_ssa_variable(Identifier::new("struct_field_result".to_string()));
+
+                let instruction = Instruction::ReadStructField {
+                    r#struct: struct_ssaid,
+                    field: field_index,
+                    receiver,
+                };
+
+                self.add_instruction(current_block, instruction);
+
+                // TODO(next): add borrow instructions
+                return (current_block, Some(receiver));
             }
 
             Expression::If(IfStatement {
@@ -1079,6 +1278,7 @@ impl IrGenerator {
             }
 
             Expression::Array(Array { items }) => {
+                let type_ssaid = self.add_ssa_variable(Identifier::new("@array_type".to_string()));
                 let result_ssa_id =
                     self.add_ssa_variable(Identifier::new("@array_init_result".to_string()));
                 let mut item_ssaids: Vec<Ssaid> = Vec::new();
@@ -1096,7 +1296,7 @@ impl IrGenerator {
 
                 self.add_instruction(
                     current_block,
-                    Instruction::InitArray(item_ssaids, result_ssa_id),
+                    Instruction::InitArray(item_ssaids, result_ssa_id, type_ssaid),
                 );
                 return (current_block, Some(result_ssa_id));
             }

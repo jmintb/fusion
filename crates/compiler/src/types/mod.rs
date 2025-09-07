@@ -14,7 +14,7 @@ use crate::identifiers::{IDGenerator, ID};
 use std::marker::PhantomData;
 use tracing::debug;
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, Ord, PartialEq, PartialOrd, Eq)]
 pub enum Type {
     Struct(StructTypeID),
     Function(FunctionTypeID),
@@ -43,10 +43,10 @@ impl Type {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
 pub struct SignedIntegerType(pub usize);
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
 pub struct UnsignedIntegerType(pub usize);
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
@@ -63,15 +63,15 @@ pub struct ArrayType {
     pub length: usize,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct StructType {
-    pub identifier: Identifier,
-    pub fields: Vec<StructField>,
+    pub field_ids: Vec<StructField>,
+    pub field_types: Vec<TypeID>,
 }
 
 #[derive(Debug, Clone)]
 pub struct StructField {
-    pub field_name: Identifier,
+    pub field_name: usize,
     pub field_type: TypeID,
 }
 
@@ -83,7 +83,7 @@ pub struct FunctionType {
     pub parameter_access_modes: Vec<AccessModes>,
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Clone, Hash, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Clone, Hash, Debug, Default)]
 pub struct StructTypeID(ID);
 
 impl From<ID> for StructTypeID {
@@ -95,6 +95,12 @@ impl From<ID> for StructTypeID {
 impl From<StructTypeID> for TypeID {
     fn from(value: StructTypeID) -> Self {
         Self::Struct(value)
+    }
+}
+
+impl From<StructTypeID> for usize {
+    fn from(val: StructTypeID) -> Self {
+        val.0
     }
 }
 
@@ -167,7 +173,7 @@ impl<T, K: From<usize> + Into<usize>> FlatEntityStore<T, K> {
         self.entities.get(id.into())
     }
 
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             entities: Vec::new(),
             id_type_marker: PhantomData {},

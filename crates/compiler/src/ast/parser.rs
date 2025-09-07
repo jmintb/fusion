@@ -16,7 +16,7 @@ use super::{
     nodes::{
         Array, ArrayLookup, Assign, Assignment, Block, Call, Expression, FunctionArg,
         FunctionDeclaration, IfElseStatement, IfStatement, Integer, Operation, Operator, Return,
-        StructDeclaration, StructField, StructInit, Type, Value, While,
+        StructDeclaration, StructField, StructFieldPath, StructInit, Type, Value, While,
     },
     Ast, NodeDatabase,
 };
@@ -208,6 +208,7 @@ fn parse_expression(builder: &mut AstBuilder, pair: Pair<Rule>) -> Result<Expres
         Rule::array_lookup => Expression::ArrayLookup(parse_array_lookup(builder, pair)?),
         Rule::while_loop => Expression::While(parse_while_loop(builder, pair)?),
         Rule::assign => Expression::Assign(parse_assign(builder, pair)?),
+        Rule::structFieldRef => Expression::StructFieldRef(parse_struct_field_ref(builder, pair)?),
         _ => panic!("Got unexpected expression: {:?}", pair.as_rule()),
     };
 
@@ -309,6 +310,35 @@ fn parse_array(builder: &mut AstBuilder, expression: Pair<Rule>) -> Result<Array
     Ok(Array { items })
 }
 
+fn parse_struct_field_ref(
+    _builder: &mut AstBuilder,
+    expression: Pair<Rule>,
+) -> Result<StructFieldPath> {
+    let mut inner = if let Rule::structFieldRef = expression.as_rule() {
+        expression.into_inner()
+    } else {
+        bail!("expected array lookup rule found {}", expression.as_str())
+    };
+
+    let Some(struct_identifier) = inner
+        .next()
+        .map(|identifer| Identifier(identifer.as_str().to_string()))
+    else {
+        bail!("missing array identifier")
+    };
+
+    let field = if let Some(field) = inner.next() {
+        field
+    } else {
+        bail!("missing array index")
+    };
+
+    Ok(StructFieldPath {
+        struct_indentifier: struct_identifier,
+        field_identifier: Identifier(field.as_str().to_string()),
+    })
+}
+
 fn parse_array_lookup(builder: &mut AstBuilder, expression: Pair<'_, Rule>) -> Result<ArrayLookup> {
     let mut inner = if let Rule::array_lookup = expression.as_rule() {
         expression.into_inner()
@@ -385,8 +415,21 @@ fn parse_return(builder: &mut AstBuilder, pair: Pair<Rule>) -> Result<Return> {
     })
 }
 
-fn parse_struct_init(_builder: &mut AstBuilder, _pair: Pair<Rule>) -> Result<StructInit> {
-    todo!()
+fn parse_struct_init(builder: &mut AstBuilder, struct_init_pair: Pair<Rule>) -> Result<StructInit> {
+    let mut inner = struct_init_pair.clone().into_inner();
+
+    let id = inner.next().unwrap();
+
+    let args = inner
+        .map(|arg| parse_expression(builder, arg).unwrap())
+        .collect();
+
+    let call = StructInit {
+        struct_id: Identifier(id.as_str().trim().to_string()),
+        field_values: args,
+    };
+
+    Ok(call)
 }
 
 fn parse_integer(integer: Pair<Rule>) -> Result<Integer> {
@@ -538,6 +581,16 @@ mod test {
             ),
             format!("{}", ast.0.to_string(&ast.1))
         );
+        Ok(())
+    }
+
+    #[rstest]
+    #[test_log::test]
+    fn snapshop_ast_output_ir_test(
+        #[files("./ir_test_programs/test_*.ts")] path: PathBuf,
+    ) -> Result<()> {
+        let input = std::fs::read_to_string(&path)?;
+        let _ = parse(&input)?;
         Ok(())
     }
 }

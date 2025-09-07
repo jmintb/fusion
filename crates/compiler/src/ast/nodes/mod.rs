@@ -43,11 +43,11 @@ impl Type {
         'c: 'a,
     {
         match self {
-            Type::Pointer => llvm::r#type::opaque_pointer(context),
-            Type::String => llvm::r#type::opaque_pointer(context),
+            Type::Pointer => llvm::r#type::pointer(context, 0),
+            Type::String => llvm::r#type::pointer(context, 0),
             Type::SignedInteger => IntegerType::new(context, 32).into(),
             Type::Unit => llvm::r#type::void(context),
-            Type::StringLiteral => llvm::r#type::opaque_pointer(context),
+            Type::StringLiteral => llvm::r#type::pointer(context, 0),
             _ => todo!("unimplemented type to mlir type {:?}", self),
         }
     }
@@ -262,6 +262,8 @@ impl Expression {
                 let debug_string = "if_else_start";
                 debug_string.to_string()
             }
+            Expression::StructFieldRef(_) => "".to_string(),
+            Expression::Struct(_) => "".to_string(),
             e => todo!("implement debug string for expression {e:?}"),
         })
     }
