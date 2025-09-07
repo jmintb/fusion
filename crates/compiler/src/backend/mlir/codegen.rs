@@ -329,8 +329,8 @@ impl<'ctx> CodeGen<'ctx> {
                             .append_operation(melior::dialect::arith::constant(
                                 self.context,
                                 IntegerAttribute::new(
-                                    int.value as i64, // TODO why do we need 4 here?
                                     IntegerType::new(self.context, 32).into(),
+                                    int.value as i64, 
                                 )
                                 .into(),
                                 Location::unknown(self.context),
@@ -1325,8 +1325,8 @@ impl<'ctx> CodeGen<'ctx> {
                         .append_operation(melior::dialect::index::constant(
                             self.context,
                             IntegerAttribute::new(
-                                index as i64,
                                 melior::ir::Type::index(self.context),
+                                index as i64,
                             ),
                             location,
                         ))

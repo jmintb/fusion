@@ -17,17 +17,20 @@ stdenv.mkDerivation rec {
     src = fetchFromGitHub {
       owner = "llvm";
       repo = pname;
-      rev = "b2417f51dbbd7435eb3aaf203de24de6754da50e";
-      hash = "sha256-1pIULcViMIINrFDnpUyGnKyA0HvFawjh0HzWU/WshiM=";
+      rev = "f780955e1df9105e9c4e67ebd16efded7dd279e2";
+      hash = "sha256-gmRVOTLeCbxYIyLcOIQhYWOvx2Gbxq1DX60XSkGXI/8=";
     };
     cmakeDir = "../llvm";
     cmakeFlags = [
+      "-DC_INCLUDE_DIRS=${stdenv.cc.libc.dev}/include"
       "-DLLVM_ENABLE_BINDINGS=OFF"
       "-DLLVM_ENABLE_OCAMLDOC=OFF"
       "-DLLVM_BUILD_EXAMPLES=OFF"
       "-DLLVM_ENABLE_PROJECTS=mlir;clang"
-      "-DLLVM_TARGETS_TO_BUILD=host;RISCV"
+      "-DLLVM_TARGETS_TO_BUILD=host"
       "-DLLVM_INSTALL_UTILS=ON"
+      "-DLLVM_TARGETS_TO_BUILD=host"
+      "-DCMAKE_BUILD_TYPE=Release"
     ];
     checkTarget = "check-mlir check-clang";
     }

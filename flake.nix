@@ -18,7 +18,7 @@ let
     src = fetchFromGitHub {
       owner = "llvm";
       repo = pname;
-      rev = "8f966cedea594d9a91e585e88a80a42c04049e6c";
+      rev = "87f0227cb60147a26a1eeb4fb06e3b505e9c7261";
       hash = "sha256-g2cYk3/iyUvmIG0QCQpYmWj4L2H4znx9KbuA5TvIjrc=";
     };
     cmakeDir = "../llvm";
