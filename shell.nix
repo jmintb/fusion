@@ -10,7 +10,6 @@ in pkgs.mkShell {
   llvm
   libxml2
   libz
-  libtinfo
   ];
 
 # Certain Rust tools won't work without this

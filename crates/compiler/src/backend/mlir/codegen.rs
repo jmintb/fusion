@@ -330,7 +330,7 @@ impl<'ctx> CodeGen<'ctx> {
                                 self.context,
                                 IntegerAttribute::new(
                                     IntegerType::new(self.context, 32).into(),
-                                    int.value as i64, 
+                                    int.value as i64,
                                 )
                                 .into(),
                                 Location::unknown(self.context),

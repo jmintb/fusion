@@ -1,8 +1,8 @@
 ---
-source: src/backend/mlir/codegen.rs
+source: crates/compiler/src/backend/mlir/codegen.rs
 expression: "format!(\"{}\", mlir_output)"
 ---
-module attributes {llvm.data_layout = ""} {
+module {
   llvm.func @fdopen(i32, !llvm.ptr) -> !llvm.ptr attributes {llvm.emit_c_interface, sym_visibility = "private"}
   llvm.func @fclose(!llvm.ptr) attributes {llvm.emit_c_interface, sym_visibility = "private"}
   llvm.func @fwrite(!llvm.ptr, i32, i32, !llvm.ptr) -> i32 attributes {llvm.emit_c_interface, sym_visibility = "private"}
