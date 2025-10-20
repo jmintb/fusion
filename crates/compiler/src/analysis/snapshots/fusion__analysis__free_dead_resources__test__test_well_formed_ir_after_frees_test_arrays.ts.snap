@@ -4,70 +4,70 @@ expression: "format!(\"{}\", ir_program)"
 ---
 IR:
 fn 17:
-block_4
-0: 5_val = fnarg
-1: 6_len = fnarg
-2: 7_anonymous := Int(1)
-3: borrow(7_anonymous)
-4: 8_anonymous := "w"
-5: borrow(8_anonymous)
-6: receiver_Ssaid(9) = @0( let 7_anonymous, let 8_anonymous,)
-7: borrow_end(7_anonymous)
-8: borrow_end(8_anonymous)
-9: 10_stdoutptr = 9_fdopen_result
-10: drop(7_anonymous)
-11: move(9_fdopen_result)
-12: drop(8_anonymous)
-13: borrow(5_val)
-14: borrow(6_len)
-15: 11_anonymous := Int(1)
-16: borrow(11_anonymous)
-17: borrow(10_stdoutptr)
-18: receiver_Ssaid(12) = @2( let 5_val, let 6_len, let 11_anonymous, let 10_stdoutptr,)
-19: borrow_end(5_val)
-20: drop(5_val)
-21: borrow_end(6_len)
-22: drop(6_len)
-23: drop(12_fwrite_result)
-24: borrow_end(11_anonymous)
-25: borrow_end(10_stdoutptr)
-26: drop(11_anonymous)
-27: drop(10_stdoutptr)
+block_5
+0: 6_val = fnarg
+1: 7_len = fnarg
+2: 8_anonymous := Int(1)
+3: borrow(8_anonymous)
+4: 9_anonymous := "w"
+5: borrow(9_anonymous)
+6: receiver_Ssaid(10) = @0( let 8_anonymous, let 9_anonymous,)
+7: borrow_end(8_anonymous)
+8: borrow_end(9_anonymous)
+9: 11_stdoutptr = 10_fdopen_result
+10: drop(8_anonymous)
+11: move(10_fdopen_result)
+12: drop(9_anonymous)
+13: borrow(6_val)
+14: borrow(7_len)
+15: 12_anonymous := Int(1)
+16: borrow(12_anonymous)
+17: borrow(11_stdoutptr)
+18: receiver_Ssaid(13) = @2( let 6_val, let 7_len, let 12_anonymous, let 11_stdoutptr,)
+19: borrow_end(6_val)
+20: drop(6_val)
+21: borrow_end(7_len)
+22: drop(7_len)
+23: drop(13_fwrite_result)
+24: borrow_end(12_anonymous)
+25: borrow_end(11_stdoutptr)
+26: drop(12_anonymous)
+27: drop(11_stdoutptr)
 28: return
 
 fn 33:
-block_13
-0: 16_anonymous := "first \n"
-1: 17_anonymous := "second \n"
-2: 18_anonymous := "third \n"
-3: move(16_anonymous)
-4: move(17_anonymous)
-5: move(18_anonymous)
-6: array_init_result_Ssaid(15) = InitArray[ 16_anonymous, 17_anonymous, 18_anonymous,]
-7: 19_vals = 15_@array_init_result
-8: move(15_@array_init_result)
-9: 20_anonymous := Int(1)
-10: move(20_anonymous)
-11: move(19_vals)
-12: array_lookup_result_Ssaid(21) = ArrayLookup( 19_vals, 20_anonymous, 21_@array_lookup_result,)
-13: borrow(21_@array_lookup_result)
-14: 22_anonymous := Int(8)
-15: borrow(22_anonymous)
-16: @17( let 21_@array_lookup_result, let 22_anonymous,)
-17: borrow_end(21_@array_lookup_result)
-18: drop(21_@array_lookup_result)
-19: borrow_end(22_anonymous)
-20: drop(22_anonymous)
-21: 23_anonymous := Int(2)
-22: move(23_anonymous)
-23: move(19_vals)
-24: array_lookup_result_Ssaid(24) = ArrayLookup( 19_vals, 23_anonymous, 24_@array_lookup_result,)
-25: borrow(24_@array_lookup_result)
-26: 25_anonymous := Int(7)
-27: borrow(25_anonymous)
-28: @17( let 24_@array_lookup_result, let 25_anonymous,)
-29: borrow_end(24_@array_lookup_result)
-30: drop(24_@array_lookup_result)
-31: borrow_end(25_anonymous)
-32: drop(25_anonymous)
+block_14
+0: 17_anonymous := "first \n"
+1: 18_anonymous := "second \n"
+2: 19_anonymous := "third \n"
+3: move(17_anonymous)
+4: move(18_anonymous)
+5: move(19_anonymous)
+6: array_init_result_Ssaid(16) = InitArray[ 17_anonymous, 18_anonymous, 19_anonymous,]
+7: 20_vals = 16_@array_init_result
+8: move(16_@array_init_result)
+9: 21_anonymous := Int(1)
+10: move(21_anonymous)
+11: move(20_vals)
+12: array_lookup_result_Ssaid(22) = ArrayLookup( 20_vals, 21_anonymous, 22_@array_lookup_result,)
+13: borrow(22_@array_lookup_result)
+14: 23_anonymous := Int(8)
+15: borrow(23_anonymous)
+16: @17( let 22_@array_lookup_result, let 23_anonymous,)
+17: borrow_end(22_@array_lookup_result)
+18: drop(22_@array_lookup_result)
+19: borrow_end(23_anonymous)
+20: drop(23_anonymous)
+21: 24_anonymous := Int(2)
+22: move(24_anonymous)
+23: move(20_vals)
+24: array_lookup_result_Ssaid(25) = ArrayLookup( 20_vals, 24_anonymous, 25_@array_lookup_result,)
+25: borrow(25_@array_lookup_result)
+26: 26_anonymous := Int(7)
+27: borrow(26_anonymous)
+28: @17( let 25_@array_lookup_result, let 26_anonymous,)
+29: borrow_end(25_@array_lookup_result)
+30: drop(25_@array_lookup_result)
+31: borrow_end(26_anonymous)
+32: drop(26_anonymous)
 33: return

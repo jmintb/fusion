@@ -60,7 +60,6 @@ pub struct IrProgram {
     pub node_db: NodeDatabase,
     pub static_values: HashMap<Ssaid, Value>,
     pub external_function_declaraitons: Vec<FunctionDeclarationID>,
-    pub ssa_variable_types: BTreeMap<Ssaid, types::Type>,
     block_results: BTreeMap<BlockId, Ssaid>,
     pub top_level_block: BlockId,
     pub struct_field_identifier: Vec<Identifier>,
@@ -163,9 +162,9 @@ pub enum Instruction {
     MutBorrow(Ssaid),
     MutBorrowEnd(Ssaid),
     Drop(Ssaid),
-    Call(FunctionId, Vec<(Ssaid, AccessModes)>, Ssaid),
+    Call(FunctionId, Vec<(Ssaid, AccessModes)>, Ssaid, usize),
     ResultlessCall(FunctionId, Vec<(Ssaid, AccessModes)>),
-    AssignFnArg(Ssaid, usize),
+    AssignFnArg(Ssaid, usize, usize),
     Return(Option<Ssaid>),
     IfElse(Ssaid, BlockId, BlockId),
     If(Ssaid, BlockId),
@@ -198,6 +197,10 @@ pub enum Instruction {
         receiver: Ssaid,
         type_name_id: usize,
     },
+    DeclarePointerType {
+        receiver: Ssaid,
+        type_name_id: usize,
+    },
 }
 
 impl Instruction {
@@ -216,6 +219,7 @@ impl Instruction {
     ) -> String {
         match self {
             Self::DeclareIntegerType { .. } => "".to_string(),
+            Self::DeclarePointerType { .. } => "".to_string(),
             Self::DeclareStringType { .. } => "".to_string(),
             Self::WhileLoop {
                 condition, body, ..
@@ -376,7 +380,7 @@ impl Instruction {
                     static_ssa_values[id].to_debug_string()
                 )
             }
-            Self::AssignFnArg(to, _position) => {
+            Self::AssignFnArg(to, _position, _) => {
                 format!(
                     "{}_{} = fnarg",
                     to.0,
@@ -426,7 +430,7 @@ impl Instruction {
                     ssa_variables.get(id).unwrap().original_variable.0
                 )
             }
-            Self::Call(function_id, args, result_id) => {
+            Self::Call(function_id, args, result_id, _) => {
                 format!(
                     "receiver_{:?} = @{}({})",
                     result_id,
@@ -655,6 +659,7 @@ impl IrGenerator {
     fn convert_top_level(&mut self) -> BlockId {
         let builtin_integer_type = self.add_ssa_variable(Identifier::new("integer".to_string()));
         let builtin_str_type = self.add_ssa_variable(Identifier::new("str".to_string()));
+        let builtin_ptr_type = self.add_ssa_variable(Identifier::new("ptr".to_string()));
 
         let top_level_block = self.add_block();
         let integer_type_name_id = self.type_names.insert(Type::SignedInteger);
@@ -670,8 +675,17 @@ impl IrGenerator {
         self.add_instruction(
             top_level_block,
             Instruction::DeclareStringType {
-                receiver: builtin_str_type,
+                receiver: builtin_ptr_type,
                 type_name_id: string_type_name_id,
+            },
+        );
+        
+        let ptr_type_name_id = self.type_names.insert(Type::Pointer);
+        self.add_instruction(
+            top_level_block,
+            Instruction::DeclarePointerType {
+                receiver: builtin_str_type,
+                type_name_id: ptr_type_name_id,
             },
         );
 
@@ -742,7 +756,6 @@ impl IrGenerator {
             node_db: self.node_db,
             static_values: self.static_values,
             external_function_declaraitons: self.external_function_declaraitons,
-            ssa_variable_types: self.ssaid_variable_types,
             block_results: self.block_results,
             struct_field_identifier: self.struct_field_identifier,
             top_level_block,
@@ -984,6 +997,7 @@ impl IrGenerator {
                     }
                 }
 
+                // TODO: we should not be interacting with types at this stage.
                 let result = match function_return_type {
                     types::Type::Unit => {
                         self.add_instruction(
@@ -1000,6 +1014,7 @@ impl IrGenerator {
                         None
                     }
                     _ => {
+                        let return_type_name_id = self.type_names.insert(function_declaration.return_type.unwrap());
                         let function_call_result_reciever = self
                             .add_ssa_variable(Identifier::new(format!("{}_result", function_id.0)));
                         self.add_instruction(
@@ -1012,6 +1027,7 @@ impl IrGenerator {
                                 ),
                                 function_args,
                                 function_call_result_reciever,
+                                return_type_name_id
                             ),
                         );
 
@@ -1352,8 +1368,16 @@ impl IrGenerator {
             Some(Type::SignedInteger) => types::Type::Integer(types::SignedIntegerType(32)),
             _ => todo!("argument typing not implemented for: {:?}", argument),
         };
+
+        let argument_type_name_id =  if let Some(argument_type_name) = argument.r#type {
+            self.type_names.insert(argument_type_name)
+        } else {
+            panic!("missing argument type");
+        };
+
+
         let ssa_id = self.add_ssa_variable(argument.name);
-        let assign_instruction = Instruction::AssignFnArg(ssa_id, position);
+        let assign_instruction = Instruction::AssignFnArg(ssa_id, position, argument_type_name_id);
         self.access_modes.insert(ssa_id, argument.access_mode);
         self.add_instruction(current_block, assign_instruction);
         self.set_ssaid_type(ssa_id, argument_type);

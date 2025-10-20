@@ -178,7 +178,7 @@ pub fn calculate_livenss(
                             &ctx.scope.control_flow_graph,
                         )?;
                     }
-                    Instruction::Call(_, _, to) => variable_livness.insert_variable_start(
+                    Instruction::Call(_, _, to, _) => variable_livness.insert_variable_start(
                         *to,
                         AbstractAddress {
                             block_id: *block_id,

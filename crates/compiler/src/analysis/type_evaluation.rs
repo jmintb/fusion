@@ -129,6 +129,38 @@ fn check_types(
     debug!("evaluating type for instruction: {:?}", instruction);
 
     match instruction {
+        Instruction::Call(_, _, receiver, return_type_name_id) => {
+            let type_name = ctx.ir_program.type_names.get(*return_type_name_id).unwrap();
+            let Some(type_ssaid) = bc_ctx.type_name_ids.get(type_name) else {
+                bail!("failed to find type ssaid for type name: {:#?}", type_name);
+            };
+            bc_ctx.variable_types.insert(*receiver, *type_ssaid);
+        }
+        Instruction::Addition(lhs, rhs, receiver) => {
+            let lhs_type_ssaid = bc_ctx.variable_types.get(lhs).unwrap();
+            let rhs_type_ssaid = bc_ctx.variable_types.get(rhs).unwrap();
+            assert!(lhs_type_ssaid == rhs_type_ssaid);
+
+            bc_ctx.variable_types.insert(*receiver, *lhs_type_ssaid);
+        }
+        Instruction::AssignFnArg(receiver, _, type_name_id) => {
+            let type_name = ctx.ir_program.type_names.get(*type_name_id).unwrap();
+            let Some(type_ssaid) = bc_ctx.type_name_ids.get(type_name) else {
+                bail!("failed to find type ssaid for type name: {:#?}", type_name);
+            };
+            bc_ctx.variable_types.insert(*receiver, *type_ssaid);
+        }
+        Instruction::DeclarePointerType {
+            receiver,
+            type_name_id,
+        } => {
+            bc_ctx.comp_time_types.insert(
+                *receiver,
+                Type::Pointer,
+            );
+            let type_name = ctx.ir_program.type_names.get(*type_name_id).unwrap();
+            bc_ctx.type_name_ids.insert(type_name.clone(), *receiver);
+        }
         Instruction::DeclareIntegerType {
             receiver,
             type_name_id,
@@ -147,6 +179,9 @@ fn check_types(
             bc_ctx.comp_time_types.insert(*receiver, Type::String);
             let type_name = ctx.ir_program.type_names.get(*type_name_id).unwrap();
             bc_ctx.type_name_ids.insert(type_name.clone(), *receiver);
+
+            // TODO: this is a hack t support string literals, should they just be removed?
+            bc_ctx.type_name_ids.insert(TypeName::StringLiteral, *receiver);
         }
         Instruction::AnonymousValue(ssaid) => {
             let value = ctx.ir_program.static_values.get(ssaid).unwrap();

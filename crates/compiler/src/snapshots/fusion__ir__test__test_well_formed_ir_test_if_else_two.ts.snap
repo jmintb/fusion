@@ -4,61 +4,61 @@ expression: "format!(\"{}\", ir_progam)"
 ---
 IR:
 fn 17:
-block_4
-0: 5_val = fnarg
-1: 6_len = fnarg
-2: 7_anonymous := Int(1)
-3: borrow(7_anonymous)
-4: 8_anonymous := "w"
-5: borrow(8_anonymous)
-6: receiver_Ssaid(9) = @0( let 7_anonymous, let 8_anonymous,)
-7: borrow_end(7_anonymous)
-8: borrow_end(8_anonymous)
-9: 10_stdoutptr = 9_fdopen_result
-10: move(9_fdopen_result)
-11: borrow(5_val)
-12: borrow(6_len)
-13: 11_anonymous := Int(1)
-14: borrow(11_anonymous)
-15: borrow(10_stdoutptr)
-16: receiver_Ssaid(12) = @2( let 5_val, let 6_len, let 11_anonymous, let 10_stdoutptr,)
-17: borrow_end(5_val)
-18: borrow_end(6_len)
-19: borrow_end(11_anonymous)
-20: borrow_end(10_stdoutptr)
+block_5
+0: 6_val = fnarg
+1: 7_len = fnarg
+2: 8_anonymous := Int(1)
+3: borrow(8_anonymous)
+4: 9_anonymous := "w"
+5: borrow(9_anonymous)
+6: receiver_Ssaid(10) = @0( let 8_anonymous, let 9_anonymous,)
+7: borrow_end(8_anonymous)
+8: borrow_end(9_anonymous)
+9: 11_stdoutptr = 10_fdopen_result
+10: move(10_fdopen_result)
+11: borrow(6_val)
+12: borrow(7_len)
+13: 12_anonymous := Int(1)
+14: borrow(12_anonymous)
+15: borrow(11_stdoutptr)
+16: receiver_Ssaid(13) = @2( let 6_val, let 7_len, let 12_anonymous, let 11_stdoutptr,)
+17: borrow_end(6_val)
+18: borrow_end(7_len)
+19: borrow_end(12_anonymous)
+20: borrow_end(11_stdoutptr)
 21: return
 
 fn 33:
-block_13
-0: 14_anonymous := "222"
-1: 15_test = 14_anonymous
-2: move(14_anonymous)
-3: 16_anonymous := Int(1)
-4: 17_anonymous := Int(0)
-5: 18_@less_than_result = 16_anonymous < 17_anonymous
-6: move(16_anonymous)
-7: move(17_anonymous)
-8: if 18_@less_than_result then 19_block else 21_block
+block_14
+0: 15_anonymous := "222"
+1: 16_test = 15_anonymous
+2: move(15_anonymous)
+3: 17_anonymous := Int(1)
+4: 18_anonymous := Int(0)
+5: 19_@less_than_result = 17_anonymous < 18_anonymous
+6: move(17_anonymous)
+7: move(18_anonymous)
+8: if 19_@less_than_result then 20_block else 22_block
 
-block_19
-0: move(15_test)
-1: @36( owned 15_test,)
+block_20
+0: move(16_test)
+1: @36( owned 16_test,)
+
+block_22
+0: borrow(16_test)
+1: 23_anonymous := Int(3)
+2: borrow(23_anonymous)
+3: @17( let 16_test, let 23_anonymous,)
+4: borrow_end(16_test)
+5: borrow_end(23_anonymous)
 
 block_21
-0: borrow(15_test)
-1: 22_anonymous := Int(3)
-2: borrow(22_anonymous)
-3: @17( let 15_test, let 22_anonymous,)
-4: borrow_end(15_test)
-5: borrow_end(22_anonymous)
-
-block_20
 0: return
 
-block_20
+block_21
 0: return
 
 fn 36:
-block_23
-0: 24_test = fnarg
+block_24
+0: 25_test = fnarg
 1: return
