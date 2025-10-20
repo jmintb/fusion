@@ -2,4 +2,4 @@
 source: crates/compiler/src/ir.rs
 expression: "format!(\"{}\", control_flow_graph)"
 ---
-entry point: block_17
+entry point: block_18

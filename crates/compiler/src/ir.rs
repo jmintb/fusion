@@ -201,6 +201,10 @@ pub enum Instruction {
         receiver: Ssaid,
         type_name_id: usize,
     },
+    DeclareBooleanType {
+        receiver: Ssaid,
+        type_name_id: usize,
+    },
 }
 
 impl Instruction {
@@ -219,6 +223,7 @@ impl Instruction {
     ) -> String {
         match self {
             Self::DeclareIntegerType { .. } => "".to_string(),
+            Self::DeclareBooleanType { .. } => "".to_string(),
             Self::DeclarePointerType { .. } => "".to_string(),
             Self::DeclareStringType { .. } => "".to_string(),
             Self::WhileLoop {
@@ -660,6 +665,7 @@ impl IrGenerator {
         let builtin_integer_type = self.add_ssa_variable(Identifier::new("integer".to_string()));
         let builtin_str_type = self.add_ssa_variable(Identifier::new("str".to_string()));
         let builtin_ptr_type = self.add_ssa_variable(Identifier::new("ptr".to_string()));
+        let builtin_boolean_type = self.add_ssa_variable(Identifier::new("boolean".to_string()));
 
         let top_level_block = self.add_block();
         let integer_type_name_id = self.type_names.insert(Type::SignedInteger);
@@ -679,13 +685,22 @@ impl IrGenerator {
                 type_name_id: string_type_name_id,
             },
         );
-        
+
         let ptr_type_name_id = self.type_names.insert(Type::Pointer);
         self.add_instruction(
             top_level_block,
             Instruction::DeclarePointerType {
                 receiver: builtin_str_type,
                 type_name_id: ptr_type_name_id,
+            },
+        );
+
+        let boolean_type_name_id = self.type_names.insert(Type::Boolean);
+        self.add_instruction(
+            top_level_block,
+            Instruction::DeclareBooleanType {
+                receiver: builtin_boolean_type,
+                type_name_id: boolean_type_name_id,
             },
         );
 
@@ -1014,7 +1029,9 @@ impl IrGenerator {
                         None
                     }
                     _ => {
-                        let return_type_name_id = self.type_names.insert(function_declaration.return_type.unwrap());
+                        let return_type_name_id = self
+                            .type_names
+                            .insert(function_declaration.return_type.unwrap());
                         let function_call_result_reciever = self
                             .add_ssa_variable(Identifier::new(format!("{}_result", function_id.0)));
                         self.add_instruction(
@@ -1027,7 +1044,7 @@ impl IrGenerator {
                                 ),
                                 function_args,
                                 function_call_result_reciever,
-                                return_type_name_id
+                                return_type_name_id,
                             ),
                         );
 
@@ -1369,12 +1386,11 @@ impl IrGenerator {
             _ => todo!("argument typing not implemented for: {:?}", argument),
         };
 
-        let argument_type_name_id =  if let Some(argument_type_name) = argument.r#type {
+        let argument_type_name_id = if let Some(argument_type_name) = argument.r#type {
             self.type_names.insert(argument_type_name)
         } else {
             panic!("missing argument type");
         };
-
 
         let ssa_id = self.add_ssa_variable(argument.name);
         let assign_instruction = Instruction::AssignFnArg(ssa_id, position, argument_type_name_id);
