@@ -301,7 +301,9 @@ impl<'ctx> CodeGen<'ctx> {
             }
 
             let fusion_type = if function_types.variable_types.contains_key(ssa_id) {
-                &function_types.lookup_variable_type(*ssa_id).unwrap_or_else(|_| panic!("failed to find type for: {:?}", ssa_id))
+                &function_types
+                    .lookup_variable_type(*ssa_id)
+                    .unwrap_or_else(|_| panic!("failed to find type for: {:?}", ssa_id))
             } else {
                 panic!("failed to find type for {:?}", ssa_id);
             };

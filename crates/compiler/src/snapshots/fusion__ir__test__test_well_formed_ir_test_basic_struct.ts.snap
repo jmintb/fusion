@@ -4,68 +4,68 @@ expression: "format!(\"{}\", ir_progam)"
 ---
 IR:
 fn 17:
-block_6
-0: 7_val = fnarg
-1: 8_len = fnarg
-2: 9_anonymous := Int(1)
-3: borrow(9_anonymous)
-4: 10_anonymous := "w"
-5: borrow(10_anonymous)
-6: receiver_Ssaid(11) = @0( let 9_anonymous, let 10_anonymous,)
-7: borrow_end(9_anonymous)
-8: borrow_end(10_anonymous)
-9: 12_stdoutptr = 11_fdopen_result
-10: move(11_fdopen_result)
-11: borrow(7_val)
-12: borrow(8_len)
-13: 13_anonymous := Int(1)
-14: borrow(13_anonymous)
-15: borrow(12_stdoutptr)
-16: receiver_Ssaid(14) = @2( let 7_val, let 8_len, let 13_anonymous, let 12_stdoutptr,)
-17: borrow_end(7_val)
-18: borrow_end(8_len)
-19: borrow_end(13_anonymous)
-20: borrow_end(12_stdoutptr)
+block_7
+0: 8_val = fnarg
+1: 9_len = fnarg
+2: 10_anonymous := Int(1)
+3: borrow(10_anonymous)
+4: 11_anonymous := "w"
+5: borrow(11_anonymous)
+6: receiver_Ssaid(12) = @0( let 10_anonymous, let 11_anonymous,)
+7: borrow_end(10_anonymous)
+8: borrow_end(11_anonymous)
+9: 13_stdoutptr = 12_fdopen_result
+10: move(12_fdopen_result)
+11: borrow(8_val)
+12: borrow(9_len)
+13: 14_anonymous := Int(1)
+14: borrow(14_anonymous)
+15: borrow(13_stdoutptr)
+16: receiver_Ssaid(15) = @2( let 8_val, let 9_len, let 14_anonymous, let 13_stdoutptr,)
+17: borrow_end(8_val)
+18: borrow_end(9_len)
+19: borrow_end(14_anonymous)
+20: borrow_end(13_stdoutptr)
 21: return
 
 fn 42:
-block_15
-0: 16_anonymous := "232"
-1: 17_bar = 16_anonymous
-2: move(16_anonymous)
-3: 18_anonymous := Int(60)
-4: 19_anonymous := Int(40)
-5: struct_init_result_Ssaid(20) = StructInit<10>[ 18_anonymous, 19_anonymous,]
-6: 21_aFoo = 20_struct_init_result
-7: move(20_struct_init_result)
-8: struct_field_read_resul_Ssaid(22) = Ssaid(21)_FieldRead.2
-9: struct_field_read_resul_Ssaid(23) = Ssaid(21)_FieldRead.3
-10: 24_@addition_result = 22_struct_field_result + 23_struct_field_result
-11: move(22_struct_field_result)
-12: move(23_struct_field_result)
-13: 25_sum = 24_@addition_result
-14: move(24_@addition_result)
-15: 26_anonymous := Int(59)
-16: 27_@greater_than_result = 25_sum > 26_anonymous
-17: move(25_sum)
-18: move(26_anonymous)
-19: if 27_@greater_than_result then 28_block
+block_16
+0: 17_anonymous := "232"
+1: 18_bar = 17_anonymous
+2: move(17_anonymous)
+3: 19_anonymous := Int(60)
+4: 20_anonymous := Int(40)
+5: struct_init_result_Ssaid(21) = StructInit<11>[ 19_anonymous, 20_anonymous,]
+6: 22_aFoo = 21_struct_init_result
+7: move(21_struct_init_result)
+8: struct_field_read_resul_Ssaid(23) = Ssaid(22)_FieldRead.2
+9: struct_field_read_resul_Ssaid(24) = Ssaid(22)_FieldRead.3
+10: 25_@addition_result = 23_struct_field_result + 24_struct_field_result
+11: move(23_struct_field_result)
+12: move(24_struct_field_result)
+13: 26_sum = 25_@addition_result
+14: move(25_@addition_result)
+15: 27_anonymous := Int(59)
+16: 28_@greater_than_result = 26_sum > 27_anonymous
+17: move(26_sum)
+18: move(27_anonymous)
+19: if 28_@greater_than_result then 29_block
 
-block_28
-0: 29_anonymous := "struct fields sum is 6"
-1: borrow(29_anonymous)
-2: 30_anonymous := Int(22)
-3: borrow(30_anonymous)
-4: @17( let 29_anonymous, let 30_anonymous,)
-5: borrow_end(29_anonymous)
-6: borrow_end(30_anonymous)
-7: 31_anonymous := "\n"
-8: borrow(31_anonymous)
-9: 32_anonymous := Int(2)
-10: borrow(32_anonymous)
-11: @17( let 31_anonymous, let 32_anonymous,)
-12: borrow_end(31_anonymous)
-13: borrow_end(32_anonymous)
+block_29
+0: 30_anonymous := "struct fields sum is 6"
+1: borrow(30_anonymous)
+2: 31_anonymous := Int(22)
+3: borrow(31_anonymous)
+4: @17( let 30_anonymous, let 31_anonymous,)
+5: borrow_end(30_anonymous)
+6: borrow_end(31_anonymous)
+7: 32_anonymous := "\n"
+8: borrow(32_anonymous)
+9: 33_anonymous := Int(2)
+10: borrow(33_anonymous)
+11: @17( let 32_anonymous, let 33_anonymous,)
+12: borrow_end(32_anonymous)
+13: borrow_end(33_anonymous)
 
-block_33
+block_34
 0: return

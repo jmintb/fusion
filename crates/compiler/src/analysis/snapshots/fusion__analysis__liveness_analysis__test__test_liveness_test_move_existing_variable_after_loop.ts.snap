@@ -9,38 +9,20 @@ Ok(
         ): VariableLiveness {
             variables: {
                 Ssaid(
-                    6,
+                    7,
                 ): AbstractAddressRange {
                     start_address: AbstractAddress {
                         block_id: BlockId(
-                            5,
+                            6,
                         ),
                         inststruction: 17,
                     },
                     end_addresses: [
                         AbstractAddress {
                             block_id: BlockId(
-                                5,
+                                6,
                             ),
                             inststruction: 17,
-                        },
-                    ],
-                },
-                Ssaid(
-                    7,
-                ): AbstractAddressRange {
-                    start_address: AbstractAddress {
-                        block_id: BlockId(
-                            5,
-                        ),
-                        inststruction: 18,
-                    },
-                    end_addresses: [
-                        AbstractAddress {
-                            block_id: BlockId(
-                                5,
-                            ),
-                            inststruction: 18,
                         },
                     ],
                 },
@@ -49,16 +31,16 @@ Ok(
                 ): AbstractAddressRange {
                     start_address: AbstractAddress {
                         block_id: BlockId(
-                            5,
+                            6,
                         ),
-                        inststruction: 7,
+                        inststruction: 18,
                     },
                     end_addresses: [
                         AbstractAddress {
                             block_id: BlockId(
-                                5,
+                                6,
                             ),
-                            inststruction: 7,
+                            inststruction: 18,
                         },
                     ],
                 },
@@ -67,16 +49,16 @@ Ok(
                 ): AbstractAddressRange {
                     start_address: AbstractAddress {
                         block_id: BlockId(
-                            5,
+                            6,
                         ),
-                        inststruction: 8,
+                        inststruction: 7,
                     },
                     end_addresses: [
                         AbstractAddress {
                             block_id: BlockId(
-                                5,
+                                6,
                             ),
-                            inststruction: 8,
+                            inststruction: 7,
                         },
                     ],
                 },
@@ -85,16 +67,16 @@ Ok(
                 ): AbstractAddressRange {
                     start_address: AbstractAddress {
                         block_id: BlockId(
-                            5,
+                            6,
                         ),
-                        inststruction: 6,
+                        inststruction: 8,
                     },
                     end_addresses: [
                         AbstractAddress {
                             block_id: BlockId(
-                                5,
+                                6,
                             ),
-                            inststruction: 10,
+                            inststruction: 8,
                         },
                     ],
                 },
@@ -103,16 +85,16 @@ Ok(
                 ): AbstractAddressRange {
                     start_address: AbstractAddress {
                         block_id: BlockId(
-                            5,
+                            6,
                         ),
-                        inststruction: 9,
+                        inststruction: 6,
                     },
                     end_addresses: [
                         AbstractAddress {
                             block_id: BlockId(
-                                5,
+                                6,
                             ),
-                            inststruction: 20,
+                            inststruction: 10,
                         },
                     ],
                 },
@@ -121,16 +103,16 @@ Ok(
                 ): AbstractAddressRange {
                     start_address: AbstractAddress {
                         block_id: BlockId(
-                            5,
+                            6,
                         ),
-                        inststruction: 19,
+                        inststruction: 9,
                     },
                     end_addresses: [
                         AbstractAddress {
                             block_id: BlockId(
-                                5,
+                                6,
                             ),
-                            inststruction: 19,
+                            inststruction: 20,
                         },
                     ],
                 },
@@ -139,14 +121,32 @@ Ok(
                 ): AbstractAddressRange {
                     start_address: AbstractAddress {
                         block_id: BlockId(
-                            5,
+                            6,
+                        ),
+                        inststruction: 19,
+                    },
+                    end_addresses: [
+                        AbstractAddress {
+                            block_id: BlockId(
+                                6,
+                            ),
+                            inststruction: 19,
+                        },
+                    ],
+                },
+                Ssaid(
+                    14,
+                ): AbstractAddressRange {
+                    start_address: AbstractAddress {
+                        block_id: BlockId(
+                            6,
                         ),
                         inststruction: 16,
                     },
                     end_addresses: [
                         AbstractAddress {
                             block_id: BlockId(
-                                5,
+                                6,
                             ),
                             inststruction: 16,
                         },
@@ -155,10 +155,10 @@ Ok(
             },
             variable_moved: {
                 Ssaid(
-                    10,
+                    11,
                 ): {
                     BlockId(
-                        5,
+                        6,
                     ),
                 },
             },
@@ -168,38 +168,20 @@ Ok(
         ): VariableLiveness {
             variables: {
                 Ssaid(
-                    15,
+                    16,
                 ): AbstractAddressRange {
                     start_address: AbstractAddress {
                         block_id: BlockId(
-                            14,
+                            15,
                         ),
                         inststruction: 2,
                     },
                     end_addresses: [
                         AbstractAddress {
                             block_id: BlockId(
-                                14,
+                                15,
                             ),
                             inststruction: 2,
-                        },
-                    ],
-                },
-                Ssaid(
-                    16,
-                ): AbstractAddressRange {
-                    start_address: AbstractAddress {
-                        block_id: BlockId(
-                            14,
-                        ),
-                        inststruction: 1,
-                    },
-                    end_addresses: [
-                        AbstractAddress {
-                            block_id: BlockId(
-                                25,
-                            ),
-                            inststruction: 0,
                         },
                     ],
                 },
@@ -208,16 +190,16 @@ Ok(
                 ): AbstractAddressRange {
                     start_address: AbstractAddress {
                         block_id: BlockId(
-                            14,
+                            15,
                         ),
-                        inststruction: 5,
+                        inststruction: 1,
                     },
                     end_addresses: [
                         AbstractAddress {
                             block_id: BlockId(
-                                14,
+                                26,
                             ),
-                            inststruction: 5,
+                            inststruction: 0,
                         },
                     ],
                 },
@@ -226,52 +208,52 @@ Ok(
                 ): AbstractAddressRange {
                     start_address: AbstractAddress {
                         block_id: BlockId(
-                            14,
+                            15,
+                        ),
+                        inststruction: 5,
+                    },
+                    end_addresses: [
+                        AbstractAddress {
+                            block_id: BlockId(
+                                15,
+                            ),
+                            inststruction: 5,
+                        },
+                    ],
+                },
+                Ssaid(
+                    19,
+                ): AbstractAddressRange {
+                    start_address: AbstractAddress {
+                        block_id: BlockId(
+                            15,
                         ),
                         inststruction: 4,
                     },
                     end_addresses: [
                         AbstractAddress {
                             block_id: BlockId(
-                                22,
+                                23,
                             ),
                             inststruction: 7,
                         },
                     ],
                 },
                 Ssaid(
-                    20,
+                    21,
                 ): AbstractAddressRange {
                     start_address: AbstractAddress {
                         block_id: BlockId(
-                            19,
+                            20,
                         ),
                         inststruction: 3,
                     },
                     end_addresses: [
                         AbstractAddress {
                             block_id: BlockId(
-                                19,
+                                20,
                             ),
                             inststruction: 3,
-                        },
-                    ],
-                },
-                Ssaid(
-                    23,
-                ): AbstractAddressRange {
-                    start_address: AbstractAddress {
-                        block_id: BlockId(
-                            22,
-                        ),
-                        inststruction: 6,
-                    },
-                    end_addresses: [
-                        AbstractAddress {
-                            block_id: BlockId(
-                                22,
-                            ),
-                            inststruction: 6,
                         },
                     ],
                 },
@@ -280,14 +262,32 @@ Ok(
                 ): AbstractAddressRange {
                     start_address: AbstractAddress {
                         block_id: BlockId(
-                            22,
+                            23,
+                        ),
+                        inststruction: 6,
+                    },
+                    end_addresses: [
+                        AbstractAddress {
+                            block_id: BlockId(
+                                23,
+                            ),
+                            inststruction: 6,
+                        },
+                    ],
+                },
+                Ssaid(
+                    25,
+                ): AbstractAddressRange {
+                    start_address: AbstractAddress {
+                        block_id: BlockId(
+                            23,
                         ),
                         inststruction: 8,
                     },
                     end_addresses: [
                         AbstractAddress {
                             block_id: BlockId(
-                                22,
+                                23,
                             ),
                             inststruction: 8,
                         },
@@ -296,45 +296,45 @@ Ok(
             },
             variable_moved: {
                 Ssaid(
-                    15,
-                ): {
-                    BlockId(
-                        14,
-                    ),
-                },
-                Ssaid(
                     16,
                 ): {
                     BlockId(
-                        25,
+                        15,
                     ),
                 },
                 Ssaid(
                     17,
                 ): {
                     BlockId(
-                        14,
+                        26,
                     ),
                 },
                 Ssaid(
-                    20,
+                    18,
                 ): {
                     BlockId(
-                        19,
+                        15,
                     ),
                 },
                 Ssaid(
-                    23,
+                    21,
                 ): {
                     BlockId(
-                        22,
+                        20,
                     ),
                 },
                 Ssaid(
                     24,
                 ): {
                     BlockId(
-                        22,
+                        23,
+                    ),
+                },
+                Ssaid(
+                    25,
+                ): {
+                    BlockId(
+                        23,
                     ),
                 },
             },

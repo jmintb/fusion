@@ -136,6 +136,22 @@ fn check_types(
             };
             bc_ctx.variable_types.insert(*receiver, *type_ssaid);
         }
+        Instruction::LessThan(lhs, rhs, receiver) => {
+            let lhs_type_ssaid = bc_ctx.variable_types.get(lhs).unwrap();
+            let rhs_type_ssaid = bc_ctx.variable_types.get(rhs).unwrap();
+            assert!(lhs_type_ssaid == rhs_type_ssaid);
+
+            let type_ssaid = bc_ctx.type_name_ids.get(&TypeName::Boolean).unwrap();
+            bc_ctx.variable_types.insert(*receiver, *type_ssaid);
+        }
+        Instruction::GreaterThan(lhs, rhs, receiver) => {
+            let lhs_type_ssaid = bc_ctx.variable_types.get(lhs).unwrap();
+            let rhs_type_ssaid = bc_ctx.variable_types.get(rhs).unwrap();
+            assert!(lhs_type_ssaid == rhs_type_ssaid);
+
+            let type_ssaid = bc_ctx.type_name_ids.get(&TypeName::Boolean).unwrap();
+            bc_ctx.variable_types.insert(*receiver, *type_ssaid);
+        }
         Instruction::Addition(lhs, rhs, receiver) => {
             let lhs_type_ssaid = bc_ctx.variable_types.get(lhs).unwrap();
             let rhs_type_ssaid = bc_ctx.variable_types.get(rhs).unwrap();
@@ -150,14 +166,19 @@ fn check_types(
             };
             bc_ctx.variable_types.insert(*receiver, *type_ssaid);
         }
+        Instruction::DeclareBooleanType {
+            receiver,
+            type_name_id,
+        } => {
+            bc_ctx.comp_time_types.insert(*receiver, Type::Boolean);
+            let type_name = ctx.ir_program.type_names.get(*type_name_id).unwrap();
+            bc_ctx.type_name_ids.insert(type_name.clone(), *receiver);
+        }
         Instruction::DeclarePointerType {
             receiver,
             type_name_id,
         } => {
-            bc_ctx.comp_time_types.insert(
-                *receiver,
-                Type::Pointer,
-            );
+            bc_ctx.comp_time_types.insert(*receiver, Type::Pointer);
             let type_name = ctx.ir_program.type_names.get(*type_name_id).unwrap();
             bc_ctx.type_name_ids.insert(type_name.clone(), *receiver);
         }
@@ -181,7 +202,9 @@ fn check_types(
             bc_ctx.type_name_ids.insert(type_name.clone(), *receiver);
 
             // TODO: this is a hack t support string literals, should they just be removed?
-            bc_ctx.type_name_ids.insert(TypeName::StringLiteral, *receiver);
+            bc_ctx
+                .type_name_ids
+                .insert(TypeName::StringLiteral, *receiver);
         }
         Instruction::AnonymousValue(ssaid) => {
             let value = ctx.ir_program.static_values.get(ssaid).unwrap();

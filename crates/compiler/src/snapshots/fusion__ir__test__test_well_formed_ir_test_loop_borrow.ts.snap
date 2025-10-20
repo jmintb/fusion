@@ -4,77 +4,77 @@ expression: "format!(\"{}\", ir_progam)"
 ---
 IR:
 fn 17:
-block_5
-0: 6_val = fnarg
-1: 7_len = fnarg
-2: 8_anonymous := Int(1)
-3: borrow(8_anonymous)
-4: 9_anonymous := "w"
-5: borrow(9_anonymous)
-6: receiver_Ssaid(10) = @0( let 8_anonymous, let 9_anonymous,)
-7: borrow_end(8_anonymous)
-8: borrow_end(9_anonymous)
-9: 11_stdoutptr = 10_fdopen_result
-10: move(10_fdopen_result)
-11: borrow(6_val)
-12: borrow(7_len)
-13: 12_anonymous := Int(1)
-14: borrow(12_anonymous)
-15: borrow(11_stdoutptr)
-16: receiver_Ssaid(13) = @2( let 6_val, let 7_len, let 12_anonymous, let 11_stdoutptr,)
-17: borrow_end(6_val)
-18: borrow_end(7_len)
-19: borrow_end(12_anonymous)
-20: borrow_end(11_stdoutptr)
+block_6
+0: 7_val = fnarg
+1: 8_len = fnarg
+2: 9_anonymous := Int(1)
+3: borrow(9_anonymous)
+4: 10_anonymous := "w"
+5: borrow(10_anonymous)
+6: receiver_Ssaid(11) = @0( let 9_anonymous, let 10_anonymous,)
+7: borrow_end(9_anonymous)
+8: borrow_end(10_anonymous)
+9: 12_stdoutptr = 11_fdopen_result
+10: move(11_fdopen_result)
+11: borrow(7_val)
+12: borrow(8_len)
+13: 13_anonymous := Int(1)
+14: borrow(13_anonymous)
+15: borrow(12_stdoutptr)
+16: receiver_Ssaid(14) = @2( let 7_val, let 8_len, let 13_anonymous, let 12_stdoutptr,)
+17: borrow_end(7_val)
+18: borrow_end(8_len)
+19: borrow_end(13_anonymous)
+20: borrow_end(12_stdoutptr)
 21: return
 
 fn 44:
-block_14
-0: 15_anonymous := "test"
-1: 16_val = 15_anonymous
-2: move(15_anonymous)
-3: 17_anonymous := Int(0)
-4: 18_i = 17_anonymous
-5: move(17_anonymous)
-6: 21_anonymous := "hello\n"
-7: 22_anonymous := "world\n"
-8: move(21_anonymous)
-9: move(22_anonymous)
-10: array_init_result_Ssaid(20) = InitArray[ 21_anonymous, 22_anonymous,]
-11: 23_values = 20_@array_init_result
-12: move(20_@array_init_result)
-13: While block_BlockId(24)  { block_BlockId(27) }
+block_15
+0: 16_anonymous := "test"
+1: 17_val = 16_anonymous
+2: move(16_anonymous)
+3: 18_anonymous := Int(0)
+4: 19_i = 18_anonymous
+5: move(18_anonymous)
+6: 22_anonymous := "hello\n"
+7: 23_anonymous := "world\n"
+8: move(22_anonymous)
+9: move(23_anonymous)
+10: array_init_result_Ssaid(21) = InitArray[ 22_anonymous, 23_anonymous,]
+11: 24_values = 21_@array_init_result
+12: move(21_@array_init_result)
+13: While block_BlockId(25)  { block_BlockId(28) }
 
-block_24
-0: 25_anonymous := Int(2)
-1: 26_@less_than_result = 18_i < 25_anonymous
-2: move(18_i)
-3: move(25_anonymous)
+block_25
+0: 26_anonymous := Int(2)
+1: 27_@less_than_result = 19_i < 26_anonymous
+2: move(19_i)
+3: move(26_anonymous)
 
-block_27
-0: borrow(16_val)
-1: @47( let 16_val,)
-2: borrow_end(16_val)
-3: move(18_i)
-4: move(23_values)
-5: array_lookup_result_Ssaid(28) = ArrayLookup( 23_values, 18_i, 28_@array_lookup_result,)
-6: borrow(28_@array_lookup_result)
-7: 29_anonymous := Int(6)
-8: borrow(29_anonymous)
-9: @17( let 28_@array_lookup_result, let 29_anonymous,)
-10: borrow_end(28_@array_lookup_result)
-11: borrow_end(29_anonymous)
-12: 30_anonymous := Int(1)
-13: 31_@addition_result = 18_i + 30_anonymous
-14: move(18_i)
-15: move(30_anonymous)
-16: 18_i = 31_@addition_result
-17: move(31_@addition_result)
+block_28
+0: borrow(17_val)
+1: @47( let 17_val,)
+2: borrow_end(17_val)
+3: move(19_i)
+4: move(24_values)
+5: array_lookup_result_Ssaid(29) = ArrayLookup( 24_values, 19_i, 29_@array_lookup_result,)
+6: borrow(29_@array_lookup_result)
+7: 30_anonymous := Int(6)
+8: borrow(30_anonymous)
+9: @17( let 29_@array_lookup_result, let 30_anonymous,)
+10: borrow_end(29_@array_lookup_result)
+11: borrow_end(30_anonymous)
+12: 31_anonymous := Int(1)
+13: 32_@addition_result = 19_i + 31_anonymous
+14: move(19_i)
+15: move(31_anonymous)
+16: 19_i = 32_@addition_result
+17: move(32_@addition_result)
 
-block_32
+block_33
 0: return
 
 fn 47:
-block_33
-0: 34_v = fnarg
+block_34
+0: 35_v = fnarg
 1: return

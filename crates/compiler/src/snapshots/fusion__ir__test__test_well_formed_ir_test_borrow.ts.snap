@@ -4,44 +4,44 @@ expression: "format!(\"{}\", ir_progam)"
 ---
 IR:
 fn 17:
-block_5
-0: 6_val = fnarg
-1: 7_len = fnarg
-2: 8_anonymous := Int(1)
-3: borrow(8_anonymous)
-4: 9_anonymous := "w"
-5: borrow(9_anonymous)
-6: receiver_Ssaid(10) = @0( let 8_anonymous, let 9_anonymous,)
-7: borrow_end(8_anonymous)
-8: borrow_end(9_anonymous)
-9: 11_stdoutptr = 10_fdopen_result
-10: move(10_fdopen_result)
-11: borrow(6_val)
-12: borrow(7_len)
-13: 12_anonymous := Int(1)
-14: borrow(12_anonymous)
-15: borrow(11_stdoutptr)
-16: receiver_Ssaid(13) = @2( let 6_val, let 7_len, let 12_anonymous, let 11_stdoutptr,)
-17: borrow_end(6_val)
-18: borrow_end(7_len)
-19: borrow_end(12_anonymous)
-20: borrow_end(11_stdoutptr)
+block_6
+0: 7_val = fnarg
+1: 8_len = fnarg
+2: 9_anonymous := Int(1)
+3: borrow(9_anonymous)
+4: 10_anonymous := "w"
+5: borrow(10_anonymous)
+6: receiver_Ssaid(11) = @0( let 9_anonymous, let 10_anonymous,)
+7: borrow_end(9_anonymous)
+8: borrow_end(10_anonymous)
+9: 12_stdoutptr = 11_fdopen_result
+10: move(11_fdopen_result)
+11: borrow(7_val)
+12: borrow(8_len)
+13: 13_anonymous := Int(1)
+14: borrow(13_anonymous)
+15: borrow(12_stdoutptr)
+16: receiver_Ssaid(14) = @2( let 7_val, let 8_len, let 13_anonymous, let 12_stdoutptr,)
+17: borrow_end(7_val)
+18: borrow_end(8_len)
+19: borrow_end(13_anonymous)
+20: borrow_end(12_stdoutptr)
 21: return
 
 fn 26:
-block_14
-0: 15_anonymous := "hello world!"
-1: 16_message = 15_anonymous
-2: move(15_anonymous)
-3: borrow(16_message)
-4: @29( let 16_message,)
-5: borrow_end(16_message)
-6: borrow(16_message)
-7: @29( let 16_message,)
-8: borrow_end(16_message)
+block_15
+0: 16_anonymous := "hello world!"
+1: 17_message = 16_anonymous
+2: move(16_anonymous)
+3: borrow(17_message)
+4: @29( let 17_message,)
+5: borrow_end(17_message)
+6: borrow(17_message)
+7: @29( let 17_message,)
+8: borrow_end(17_message)
 9: return
 
 fn 29:
-block_17
-0: 18_test = fnarg
+block_18
+0: 19_test = fnarg
 1: return
