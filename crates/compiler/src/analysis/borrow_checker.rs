@@ -148,10 +148,10 @@ fn check_instruction(
         Instruction::ReadStructField { receiver, .. } => {
             variable_states.insert(*receiver, VariableState::Ready);
         }
-        Instruction::AssignFnArg(id, _position) => {
+        Instruction::AssignFnArg(id, _position, _) => {
             variable_states.insert(*id, VariableState::Ready);
         }
-        Instruction::Call(_function_id, _args, result) => {
+        Instruction::Call(_function_id, _args, result, _) => {
             variable_states.insert(*result, VariableState::Ready);
         }
         Instruction::Assign(to, _from) => {

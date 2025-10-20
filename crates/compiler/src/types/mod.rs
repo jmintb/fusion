@@ -28,6 +28,7 @@ pub enum Type {
     #[default]
     Unit,
     Array(ArrayTypeID),
+    Type // This type is defining a type basically, need to refine this a bit.
 }
 
 impl Type {

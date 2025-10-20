@@ -295,15 +295,15 @@ impl<'ctx> CodeGen<'ctx> {
             if function_types.comp_time_types.contains_key(ssa_id) {
                 continue;
             }
-            let fusion_type = if self.program.ssa_variable_types.contains_key(ssa_id) {
-                self.program
-                    .ssa_variable_types
-                    .get(ssa_id)
-                    .unwrap_or_else(|| panic!("failed to find type for: {:?}", ssa_id))
-            } else if function_types.variable_types.contains_key(ssa_id) {
-                &function_types.lookup_variable_type(*ssa_id).unwrap()
+
+            if function_types.comp_time_types.contains_key(ssa_id) {
+                continue;
+            }
+
+            let fusion_type = if function_types.variable_types.contains_key(ssa_id) {
+                &function_types.lookup_variable_type(*ssa_id).unwrap_or_else(|_| panic!("failed to find type for: {:?}", ssa_id))
             } else {
-                continue; // TODO: we ignore variables without a type as we assume these variables for types. This can fail silently.
+                panic!("failed to find type for {:?}", ssa_id);
             };
 
             debug!("found type {:?} for ssa id {:?}", fusion_type, ssa_id);
@@ -326,12 +326,6 @@ impl<'ctx> CodeGen<'ctx> {
                 .unwrap()
                 .into();
             locals.insert(*ssa_id, variable_mlir_value);
-
-            /*
-
-            if let types::Type::Array(_) = fusion_type {
-            }
-            */
 
             let key = ssa_id;
             if self.program.static_values.contains_key(key) {
@@ -1088,7 +1082,7 @@ impl<'ctx> CodeGen<'ctx> {
         let current_block = block_references.get(&current_block_id).unwrap();
         let location = melior::ir::Location::unknown(self.context);
         let result = match instruction {
-            Instruction::AssignFnArg(id, position) => {
+            Instruction::AssignFnArg(id, position, _) => {
                 debug!("declaring function argument {} {}", id.0, position);
                 let value_ref = current_block.argument(*position).unwrap_or_else(|_| {
                     panic!(
@@ -1140,7 +1134,7 @@ impl<'ctx> CodeGen<'ctx> {
                 //variable_store.get(result_reciever).cloned()
                 None
             }
-            Instruction::Call(function_id, arguments, result_reciever) => {
+            Instruction::Call(function_id, arguments, result_reciever, _) => {
                 self.gen_function_call(
                     function_id.clone(),
                     arguments.clone(),

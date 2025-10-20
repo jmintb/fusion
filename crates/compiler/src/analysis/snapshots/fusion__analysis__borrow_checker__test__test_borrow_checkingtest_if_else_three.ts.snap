@@ -3,5 +3,5 @@ source: crates/compiler/src/analysis/borrow_checker.rs
 expression: "format!(\"{:#?}\", analysis_result)"
 ---
 Err(
-    "variable test in block 20 was already moved ",
+    "variable test in block 21 was already moved ",
 )

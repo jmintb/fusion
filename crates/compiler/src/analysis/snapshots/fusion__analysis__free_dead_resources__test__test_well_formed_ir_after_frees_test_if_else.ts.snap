@@ -4,75 +4,75 @@ expression: "format!(\"{}\", ir_program)"
 ---
 IR:
 fn 17:
-block_4
-0: 5_val = fnarg
-1: 6_len = fnarg
-2: 7_anonymous := Int(1)
-3: borrow(7_anonymous)
-4: 8_anonymous := "w"
-5: borrow(8_anonymous)
-6: receiver_Ssaid(9) = @0( let 7_anonymous, let 8_anonymous,)
-7: borrow_end(7_anonymous)
-8: borrow_end(8_anonymous)
-9: 10_stdoutptr = 9_fdopen_result
-10: drop(7_anonymous)
-11: move(9_fdopen_result)
-12: drop(8_anonymous)
-13: borrow(5_val)
-14: borrow(6_len)
-15: 11_anonymous := Int(1)
-16: borrow(11_anonymous)
-17: borrow(10_stdoutptr)
-18: receiver_Ssaid(12) = @2( let 5_val, let 6_len, let 11_anonymous, let 10_stdoutptr,)
-19: borrow_end(5_val)
-20: drop(5_val)
-21: borrow_end(6_len)
-22: drop(6_len)
-23: drop(12_fwrite_result)
-24: borrow_end(11_anonymous)
-25: borrow_end(10_stdoutptr)
-26: drop(11_anonymous)
-27: drop(10_stdoutptr)
+block_5
+0: 6_val = fnarg
+1: 7_len = fnarg
+2: 8_anonymous := Int(1)
+3: borrow(8_anonymous)
+4: 9_anonymous := "w"
+5: borrow(9_anonymous)
+6: receiver_Ssaid(10) = @0( let 8_anonymous, let 9_anonymous,)
+7: borrow_end(8_anonymous)
+8: borrow_end(9_anonymous)
+9: 11_stdoutptr = 10_fdopen_result
+10: drop(8_anonymous)
+11: move(10_fdopen_result)
+12: drop(9_anonymous)
+13: borrow(6_val)
+14: borrow(7_len)
+15: 12_anonymous := Int(1)
+16: borrow(12_anonymous)
+17: borrow(11_stdoutptr)
+18: receiver_Ssaid(13) = @2( let 6_val, let 7_len, let 12_anonymous, let 11_stdoutptr,)
+19: borrow_end(6_val)
+20: drop(6_val)
+21: borrow_end(7_len)
+22: drop(7_len)
+23: drop(13_fwrite_result)
+24: borrow_end(12_anonymous)
+25: borrow_end(11_stdoutptr)
+26: drop(12_anonymous)
+27: drop(11_stdoutptr)
 28: return
 
 fn 36:
-block_13
-0: 14_anonymous := "some str"
-1: 15_test_val = 14_anonymous
-2: move(14_anonymous)
-3: 16_anonymous := Int(1)
-4: 17_anonymous := Int(0)
-5: 18_@greater_than_result = 16_anonymous > 17_anonymous
-6: move(16_anonymous)
-7: move(17_anonymous)
-8: if 18_@greater_than_result then 19_block else 21_block
+block_14
+0: 15_anonymous := "some str"
+1: 16_test_val = 15_anonymous
+2: move(15_anonymous)
+3: 17_anonymous := Int(1)
+4: 18_anonymous := Int(0)
+5: 19_@greater_than_result = 17_anonymous > 18_anonymous
+6: move(17_anonymous)
+7: move(18_anonymous)
+8: if 19_@greater_than_result then 20_block else 22_block
 
-block_19
-0: borrow(15_test_val)
-1: @39( let 15_test_val,)
-2: borrow_end(15_test_val)
-3: move(15_test_val)
-4: @42( owned 15_test_val,)
+block_20
+0: borrow(16_test_val)
+1: @39( let 16_test_val,)
+2: borrow_end(16_test_val)
+3: move(16_test_val)
+4: @42( owned 16_test_val,)
+
+block_22
+0: borrow(16_test_val)
+1: @39( let 16_test_val,)
+2: borrow_end(16_test_val)
+3: move(16_test_val)
+4: @42( owned 16_test_val,)
 
 block_21
-0: borrow(15_test_val)
-1: @39( let 15_test_val,)
-2: borrow_end(15_test_val)
-3: move(15_test_val)
-4: @42( owned 15_test_val,)
-
-block_20
 0: return
 
-block_20
+block_21
 0: return
 
 fn 39:
-block_22
-0: 23_val = fnarg
+block_23
+0: 24_val = fnarg
 1: return
 
 fn 42:
-block_24
-0: 25_val = fnarg
+block_25
+0: 26_val = fnarg
 1: return

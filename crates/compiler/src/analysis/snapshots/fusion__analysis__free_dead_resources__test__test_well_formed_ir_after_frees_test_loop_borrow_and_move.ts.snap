@@ -4,75 +4,75 @@ expression: "format!(\"{}\", ir_program)"
 ---
 IR:
 fn 17:
-block_4
-0: 5_val = fnarg
-1: 6_len = fnarg
-2: 7_anonymous := Int(1)
-3: borrow(7_anonymous)
-4: 8_anonymous := "w"
-5: borrow(8_anonymous)
-6: receiver_Ssaid(9) = @0( let 7_anonymous, let 8_anonymous,)
-7: borrow_end(7_anonymous)
-8: borrow_end(8_anonymous)
-9: 10_stdoutptr = 9_fdopen_result
-10: drop(7_anonymous)
-11: move(9_fdopen_result)
-12: drop(8_anonymous)
-13: borrow(5_val)
-14: borrow(6_len)
-15: 11_anonymous := Int(1)
-16: borrow(11_anonymous)
-17: borrow(10_stdoutptr)
-18: receiver_Ssaid(12) = @2( let 5_val, let 6_len, let 11_anonymous, let 10_stdoutptr,)
-19: borrow_end(5_val)
-20: drop(5_val)
-21: borrow_end(6_len)
-22: drop(6_len)
-23: drop(12_fwrite_result)
-24: borrow_end(11_anonymous)
-25: borrow_end(10_stdoutptr)
-26: drop(11_anonymous)
-27: drop(10_stdoutptr)
+block_5
+0: 6_val = fnarg
+1: 7_len = fnarg
+2: 8_anonymous := Int(1)
+3: borrow(8_anonymous)
+4: 9_anonymous := "w"
+5: borrow(9_anonymous)
+6: receiver_Ssaid(10) = @0( let 8_anonymous, let 9_anonymous,)
+7: borrow_end(8_anonymous)
+8: borrow_end(9_anonymous)
+9: 11_stdoutptr = 10_fdopen_result
+10: drop(8_anonymous)
+11: move(10_fdopen_result)
+12: drop(9_anonymous)
+13: borrow(6_val)
+14: borrow(7_len)
+15: 12_anonymous := Int(1)
+16: borrow(12_anonymous)
+17: borrow(11_stdoutptr)
+18: receiver_Ssaid(13) = @2( let 6_val, let 7_len, let 12_anonymous, let 11_stdoutptr,)
+19: borrow_end(6_val)
+20: drop(6_val)
+21: borrow_end(7_len)
+22: drop(7_len)
+23: drop(13_fwrite_result)
+24: borrow_end(12_anonymous)
+25: borrow_end(11_stdoutptr)
+26: drop(12_anonymous)
+27: drop(11_stdoutptr)
 28: return
 
 fn 39:
-block_13
-0: 14_anonymous := "test"
-1: 15_val = 14_anonymous
-2: drop(15_val)
-3: move(14_anonymous)
-4: 16_anonymous := Int(0)
-5: 17_i = 16_anonymous
-6: move(16_anonymous)
-7: While block_BlockId(18)  { block_BlockId(21) }
+block_14
+0: 15_anonymous := "test"
+1: 16_val = 15_anonymous
+2: drop(16_val)
+3: move(15_anonymous)
+4: 17_anonymous := Int(0)
+5: 18_i = 17_anonymous
+6: move(17_anonymous)
+7: While block_BlockId(19)  { block_BlockId(22) }
 
-block_18
-0: 19_anonymous := Int(10)
-1: 20_@less_than_result = 17_i < 19_anonymous
-2: move(17_i)
-3: move(19_anonymous)
+block_19
+0: 20_anonymous := Int(10)
+1: 21_@less_than_result = 18_i < 20_anonymous
+2: move(18_i)
+3: move(20_anonymous)
 
-block_21
-0: 22_anonymous := "test2"
-1: 23_val = 22_anonymous
-2: move(22_anonymous)
-3: 24_anonymous := Int(1)
-4: 25_@addition_result = 17_i + 24_anonymous
-5: move(17_i)
-6: move(24_anonymous)
-7: 17_i = 25_@addition_result
-8: move(25_@addition_result)
-9: move(23_val)
-10: borrow(17_i)
-11: @42( owned 23_val, let 17_i,)
-12: borrow_end(17_i)
+block_22
+0: 23_anonymous := "test2"
+1: 24_val = 23_anonymous
+2: move(23_anonymous)
+3: 25_anonymous := Int(1)
+4: 26_@addition_result = 18_i + 25_anonymous
+5: move(18_i)
+6: move(25_anonymous)
+7: 18_i = 26_@addition_result
+8: move(26_@addition_result)
+9: move(24_val)
+10: borrow(18_i)
+11: @42( owned 24_val, let 18_i,)
+12: borrow_end(18_i)
 
-block_26
-0: drop(17_i)
+block_27
+0: drop(18_i)
 1: return
 
 fn 42:
-block_27
-0: 28_input = fnarg
-1: 29_j = fnarg
+block_28
+0: 29_input = fnarg
+1: 30_j = fnarg
 2: return
