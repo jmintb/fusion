@@ -1,0 +1,63 @@
+---
+source: crates/compiler/src/ir.rs
+expression: "format!(\"{}\", ir_progam)"
+---
+IR:
+fn 17:
+block_6
+0: 7_val = fnarg
+1: 8_len = fnarg
+2: 9_anonymous := Int(1)
+3: borrow(9_anonymous)
+4: 10_anonymous := "w"
+5: borrow(10_anonymous)
+6: receiver_Ssaid(11) = @0( 9_anonymous, 10_anonymous,)
+7: borrow_end(9_anonymous)
+8: borrow_end(10_anonymous)
+9: 12_stdoutptr = 11_fdopen_result
+10: move(11_fdopen_result)
+11: borrow(7_val)
+12: borrow(8_len)
+13: 13_anonymous := Int(1)
+14: borrow(13_anonymous)
+15: borrow(12_stdoutptr)
+16: receiver_Ssaid(14) = @2( 7_val, 8_len, 13_anonymous, 12_stdoutptr,)
+17: borrow_end(7_val)
+18: borrow_end(8_len)
+19: borrow_end(13_anonymous)
+20: borrow_end(12_stdoutptr)
+21: return
+
+fn 32:
+block_15
+0: 16_anonymous := "test"
+1: borrow(16_anonymous)
+2: receiver_Ssaid(17) = yielding@36( 16_anonymous,)
+3: 18_projected_str = 17_project_result
+4: move(17_project_result)
+5: 19_anonymous := "before main \n"
+6: borrow(19_anonymous)
+7: 20_anonymous := Int(14)
+8: borrow(20_anonymous)
+9: @17( 19_anonymous, 20_anonymous,)
+10: borrow_end(19_anonymous)
+11: borrow_end(20_anonymous)
+12: borrow(18_projected_str)
+13: 21_anonymous := Int(4)
+14: borrow(21_anonymous)
+15: @17( 18_projected_str, 21_anonymous,)
+16: borrow_end(18_projected_str)
+17: borrow_end(21_anonymous)
+18: 22_anonymous := "\n"
+19: borrow(22_anonymous)
+20: 23_anonymous := Int(2)
+21: borrow(23_anonymous)
+22: @17( 22_anonymous, 23_anonymous,)
+23: borrow_end(22_anonymous)
+24: borrow_end(23_anonymous)
+25: return
+
+fn 36:
+block_24
+0: 25_element = fnarg
+1: yield 25

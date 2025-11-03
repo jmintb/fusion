@@ -69,7 +69,6 @@ impl VariableLiveness {
         moved: bool,
         control_flow_graph: &ControlFlowGraph<BlockId>,
     ) -> Result<()> {
-        let _variables = self.variables.clone();
         let Some(entry) = self.variables.get_mut(&id) else {
             self.variables
                 .insert(id, AbstractAddressRange::new(address));
@@ -106,8 +105,6 @@ impl VariableLiveness {
 
         Ok(())
     }
-
-    // TODO: next use reverse traverself to calcuate liveness. If two blocks diverge keep end addresses.
 
     pub fn variabled_moved(&self, id: &Ssaid, block_id: BlockId) -> bool {
         self.variable_moved

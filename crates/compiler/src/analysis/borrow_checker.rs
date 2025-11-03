@@ -154,6 +154,9 @@ fn check_instruction(
         Instruction::Call(_function_id, _args, result, _) => {
             variable_states.insert(*result, VariableState::Ready);
         }
+        Instruction::YieldingCall(_, _, result, _) => {
+            variable_states.insert(*result, VariableState::Ready);
+        }
         Instruction::Assign(to, _from) => {
             variable_states.insert(*to, VariableState::Ready);
         }

@@ -16,7 +16,7 @@ use super::{
     nodes::{
         Array, ArrayLookup, Assign, Assignment, Block, Call, Expression, FunctionArg,
         FunctionDeclaration, IfElseStatement, IfStatement, Integer, Operation, Operator, Return,
-        StructDeclaration, StructField, StructFieldPath, StructInit, Type, Value, While,
+        StructDeclaration, StructField, StructFieldPath, StructInit, Type, Value, While, Yield,
     },
     Ast, NodeDatabase,
 };
@@ -178,6 +178,7 @@ fn parse_statement(
         | Rule::r#if
         | Rule::while_loop
         | Rule::r#return
+        | Rule::r#yield
         | Rule::assignment
         | Rule::assign => parse_expression(builder, statement)?.into(),
         _ => bail!("Recieved unexpected rule: {:?}", statement),
@@ -193,22 +194,18 @@ fn parse_expression(builder: &mut AstBuilder, pair: Pair<Rule>) -> Result<Expres
         ))),
         Rule::call => Expression::Call(parse_fn_call(builder, pair)?),
         Rule::structInit => Expression::Struct(parse_struct_init(builder, pair)?),
-        // Rule::structFieldRef => parse_struct_field_ref(expression)?,
         Rule::integer => Expression::Value(Value::Integer(parse_integer(pair)?)),
-        // Rule::reference => {
-        //     Expression::Value(parse_string(expression.into_inner().next().unwrap())?)
-        // }
         Rule::operation => Expression::Operation(parse_operation(builder, pair)?),
         Rule::boolean => Expression::Value(Value::Boolean(parse_boolean(pair)?)),
         Rule::r#if_else => Expression::Ifelse(parse_if_else(builder, pair)?),
         Rule::r#if => Expression::If(parse_if(builder, pair)?),
-        // Rule::while_loop => Expression::While(parse_while(expression)?),
         Rule::r#return => Expression::Return(parse_return(builder, pair)?),
         Rule::array => Expression::Array(parse_array(builder, pair)?),
         Rule::array_lookup => Expression::ArrayLookup(parse_array_lookup(builder, pair)?),
         Rule::while_loop => Expression::While(parse_while_loop(builder, pair)?),
         Rule::assign => Expression::Assign(parse_assign(builder, pair)?),
         Rule::structFieldRef => Expression::StructFieldRef(parse_struct_field_ref(builder, pair)?),
+        Rule::r#yield => Expression::Yield(parse_yield(builder, pair)?),
         _ => panic!("Got unexpected expression: {:?}", pair.as_rule()),
     };
 
@@ -394,6 +391,24 @@ fn parse_operator(expression: Pair<Rule>) -> Result<Operator> {
         Rule::greater_than_or_equal => Operator::GreaterThanOrEqual,
         Rule::less_than_or_equal => Operator::LessThanOrEqual,
         _ => bail!("expected an infix operator but got: {:?}", expression),
+    })
+}
+
+fn parse_yield(builder: &mut AstBuilder, pair: Pair<Rule>) -> Result<Yield> {
+    let mut inner = if let Rule::r#yield = pair.as_rule() {
+        pair.into_inner()
+    } else {
+        bail!("expected yield rule found {}", pair.as_str());
+    };
+
+    let expression_id = if let Some(next) = inner.next() {
+        parse_expression(builder, next)?
+    } else {
+        bail!("yield was missing a value");
+    };
+
+    Ok(Yield {
+        expression: expression_id,
     })
 }
 
