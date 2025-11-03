@@ -35,16 +35,16 @@ block_6
 27: drop(12_stdoutptr)
 28: return
 
-fn 32:
+fn 29:
 block_15
 0: 16_anonymous := "test"
 1: borrow(16_anonymous)
-2: receiver_Ssaid(17) = yielding@36( 16_anonymous,)
+2: receiver_Ssaid(17) = yielding@33( 16_anonymous,)
 3: 18_projected_str = 17_project_result
 4: move(17_project_result)
 5: 19_anonymous := "before main \n"
 6: borrow(19_anonymous)
-7: 20_anonymous := Int(14)
+7: 20_anonymous := Int(13)
 8: borrow(20_anonymous)
 9: @17( 19_anonymous, 20_anonymous,)
 10: borrow_end(19_anonymous)
@@ -59,18 +59,9 @@ block_15
 19: drop(18_projected_str)
 20: borrow_end(21_anonymous)
 21: drop(21_anonymous)
-22: 22_anonymous := "\n"
-23: borrow(22_anonymous)
-24: 23_anonymous := Int(2)
-25: borrow(23_anonymous)
-26: @17( 22_anonymous, 23_anonymous,)
-27: borrow_end(22_anonymous)
-28: drop(22_anonymous)
-29: borrow_end(23_anonymous)
-30: drop(23_anonymous)
-31: return
+22: return
 
-fn 36:
-block_24
-0: 25_element = fnarg
-1: yield 25
+fn 33:
+block_22
+0: 23_element = fnarg
+1: yield 23
