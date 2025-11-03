@@ -164,7 +164,7 @@ Ok(
             },
         },
         FunctionDeclarationID(
-            32,
+            29,
         ): VariableLiveness {
             variables: {
                 Ssaid(
@@ -257,42 +257,6 @@ Ok(
                         },
                     ],
                 },
-                Ssaid(
-                    22,
-                ): AbstractAddressRange {
-                    start_address: AbstractAddress {
-                        block_id: BlockId(
-                            15,
-                        ),
-                        inststruction: 23,
-                    },
-                    end_addresses: [
-                        AbstractAddress {
-                            block_id: BlockId(
-                                15,
-                            ),
-                            inststruction: 23,
-                        },
-                    ],
-                },
-                Ssaid(
-                    23,
-                ): AbstractAddressRange {
-                    start_address: AbstractAddress {
-                        block_id: BlockId(
-                            15,
-                        ),
-                        inststruction: 24,
-                    },
-                    end_addresses: [
-                        AbstractAddress {
-                            block_id: BlockId(
-                                15,
-                            ),
-                            inststruction: 24,
-                        },
-                    ],
-                },
             },
             variable_moved: {
                 Ssaid(
@@ -305,7 +269,7 @@ Ok(
             },
         },
         FunctionDeclarationID(
-            36,
+            33,
         ): VariableLiveness {
             variables: {},
             variable_moved: {},
