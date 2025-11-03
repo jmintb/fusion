@@ -11,7 +11,7 @@ block_6
 3: borrow(9_anonymous)
 4: 10_anonymous := "w"
 5: borrow(10_anonymous)
-6: receiver_Ssaid(11) = @0( let 9_anonymous, let 10_anonymous,)
+6: receiver_Ssaid(11) = @0( 9_anonymous, 10_anonymous,)
 7: borrow_end(9_anonymous)
 8: borrow_end(10_anonymous)
 9: 12_stdoutptr = 11_fdopen_result
@@ -21,7 +21,7 @@ block_6
 13: 13_anonymous := Int(1)
 14: borrow(13_anonymous)
 15: borrow(12_stdoutptr)
-16: receiver_Ssaid(14) = @2( let 7_val, let 8_len, let 13_anonymous, let 12_stdoutptr,)
+16: receiver_Ssaid(14) = @2( 7_val, 8_len, 13_anonymous, 12_stdoutptr,)
 17: borrow_end(7_val)
 18: borrow_end(8_len)
 19: borrow_end(13_anonymous)
@@ -53,7 +53,7 @@ block_25
 
 block_28
 0: borrow(17_val)
-1: @47( let 17_val,)
+1: @47( 17_val,)
 2: borrow_end(17_val)
 3: move(19_i)
 4: move(24_values)
@@ -61,7 +61,7 @@ block_28
 6: borrow(29_@array_lookup_result)
 7: 30_anonymous := Int(6)
 8: borrow(30_anonymous)
-9: @17( let 29_@array_lookup_result, let 30_anonymous,)
+9: @17( 29_@array_lookup_result, 30_anonymous,)
 10: borrow_end(29_@array_lookup_result)
 11: borrow_end(30_anonymous)
 12: 31_anonymous := Int(1)

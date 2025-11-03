@@ -1,0 +1,314 @@
+---
+source: crates/compiler/src/analysis/liveness_analysis.rs
+expression: "format!(\"{:#?}\", analysis_result)"
+---
+Ok(
+    {
+        FunctionDeclarationID(
+            17,
+        ): VariableLiveness {
+            variables: {
+                Ssaid(
+                    7,
+                ): AbstractAddressRange {
+                    start_address: AbstractAddress {
+                        block_id: BlockId(
+                            6,
+                        ),
+                        inststruction: 17,
+                    },
+                    end_addresses: [
+                        AbstractAddress {
+                            block_id: BlockId(
+                                6,
+                            ),
+                            inststruction: 17,
+                        },
+                    ],
+                },
+                Ssaid(
+                    8,
+                ): AbstractAddressRange {
+                    start_address: AbstractAddress {
+                        block_id: BlockId(
+                            6,
+                        ),
+                        inststruction: 18,
+                    },
+                    end_addresses: [
+                        AbstractAddress {
+                            block_id: BlockId(
+                                6,
+                            ),
+                            inststruction: 18,
+                        },
+                    ],
+                },
+                Ssaid(
+                    9,
+                ): AbstractAddressRange {
+                    start_address: AbstractAddress {
+                        block_id: BlockId(
+                            6,
+                        ),
+                        inststruction: 7,
+                    },
+                    end_addresses: [
+                        AbstractAddress {
+                            block_id: BlockId(
+                                6,
+                            ),
+                            inststruction: 7,
+                        },
+                    ],
+                },
+                Ssaid(
+                    10,
+                ): AbstractAddressRange {
+                    start_address: AbstractAddress {
+                        block_id: BlockId(
+                            6,
+                        ),
+                        inststruction: 8,
+                    },
+                    end_addresses: [
+                        AbstractAddress {
+                            block_id: BlockId(
+                                6,
+                            ),
+                            inststruction: 8,
+                        },
+                    ],
+                },
+                Ssaid(
+                    11,
+                ): AbstractAddressRange {
+                    start_address: AbstractAddress {
+                        block_id: BlockId(
+                            6,
+                        ),
+                        inststruction: 6,
+                    },
+                    end_addresses: [
+                        AbstractAddress {
+                            block_id: BlockId(
+                                6,
+                            ),
+                            inststruction: 10,
+                        },
+                    ],
+                },
+                Ssaid(
+                    12,
+                ): AbstractAddressRange {
+                    start_address: AbstractAddress {
+                        block_id: BlockId(
+                            6,
+                        ),
+                        inststruction: 9,
+                    },
+                    end_addresses: [
+                        AbstractAddress {
+                            block_id: BlockId(
+                                6,
+                            ),
+                            inststruction: 20,
+                        },
+                    ],
+                },
+                Ssaid(
+                    13,
+                ): AbstractAddressRange {
+                    start_address: AbstractAddress {
+                        block_id: BlockId(
+                            6,
+                        ),
+                        inststruction: 19,
+                    },
+                    end_addresses: [
+                        AbstractAddress {
+                            block_id: BlockId(
+                                6,
+                            ),
+                            inststruction: 19,
+                        },
+                    ],
+                },
+                Ssaid(
+                    14,
+                ): AbstractAddressRange {
+                    start_address: AbstractAddress {
+                        block_id: BlockId(
+                            6,
+                        ),
+                        inststruction: 16,
+                    },
+                    end_addresses: [
+                        AbstractAddress {
+                            block_id: BlockId(
+                                6,
+                            ),
+                            inststruction: 16,
+                        },
+                    ],
+                },
+            },
+            variable_moved: {
+                Ssaid(
+                    11,
+                ): {
+                    BlockId(
+                        6,
+                    ),
+                },
+            },
+        },
+        FunctionDeclarationID(
+            32,
+        ): VariableLiveness {
+            variables: {
+                Ssaid(
+                    17,
+                ): AbstractAddressRange {
+                    start_address: AbstractAddress {
+                        block_id: BlockId(
+                            15,
+                        ),
+                        inststruction: 4,
+                    },
+                    end_addresses: [
+                        AbstractAddress {
+                            block_id: BlockId(
+                                15,
+                            ),
+                            inststruction: 4,
+                        },
+                    ],
+                },
+                Ssaid(
+                    18,
+                ): AbstractAddressRange {
+                    start_address: AbstractAddress {
+                        block_id: BlockId(
+                            15,
+                        ),
+                        inststruction: 3,
+                    },
+                    end_addresses: [
+                        AbstractAddress {
+                            block_id: BlockId(
+                                15,
+                            ),
+                            inststruction: 16,
+                        },
+                    ],
+                },
+                Ssaid(
+                    19,
+                ): AbstractAddressRange {
+                    start_address: AbstractAddress {
+                        block_id: BlockId(
+                            15,
+                        ),
+                        inststruction: 10,
+                    },
+                    end_addresses: [
+                        AbstractAddress {
+                            block_id: BlockId(
+                                15,
+                            ),
+                            inststruction: 10,
+                        },
+                    ],
+                },
+                Ssaid(
+                    20,
+                ): AbstractAddressRange {
+                    start_address: AbstractAddress {
+                        block_id: BlockId(
+                            15,
+                        ),
+                        inststruction: 11,
+                    },
+                    end_addresses: [
+                        AbstractAddress {
+                            block_id: BlockId(
+                                15,
+                            ),
+                            inststruction: 11,
+                        },
+                    ],
+                },
+                Ssaid(
+                    21,
+                ): AbstractAddressRange {
+                    start_address: AbstractAddress {
+                        block_id: BlockId(
+                            15,
+                        ),
+                        inststruction: 17,
+                    },
+                    end_addresses: [
+                        AbstractAddress {
+                            block_id: BlockId(
+                                15,
+                            ),
+                            inststruction: 17,
+                        },
+                    ],
+                },
+                Ssaid(
+                    22,
+                ): AbstractAddressRange {
+                    start_address: AbstractAddress {
+                        block_id: BlockId(
+                            15,
+                        ),
+                        inststruction: 23,
+                    },
+                    end_addresses: [
+                        AbstractAddress {
+                            block_id: BlockId(
+                                15,
+                            ),
+                            inststruction: 23,
+                        },
+                    ],
+                },
+                Ssaid(
+                    23,
+                ): AbstractAddressRange {
+                    start_address: AbstractAddress {
+                        block_id: BlockId(
+                            15,
+                        ),
+                        inststruction: 24,
+                    },
+                    end_addresses: [
+                        AbstractAddress {
+                            block_id: BlockId(
+                                15,
+                            ),
+                            inststruction: 24,
+                        },
+                    ],
+                },
+            },
+            variable_moved: {
+                Ssaid(
+                    17,
+                ): {
+                    BlockId(
+                        15,
+                    ),
+                },
+            },
+        },
+        FunctionDeclarationID(
+            36,
+        ): VariableLiveness {
+            variables: {},
+            variable_moved: {},
+        },
+    },
+)

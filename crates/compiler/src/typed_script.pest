@@ -46,13 +46,14 @@ false = {"false"}
 true = {"true"}
 
 return = { "return" ~ expression? }
+yield = { "yield" ~ expression? }
 
 array = { "[" ~ ( expression ~ ",")* ~ expression? ~ "]"}
 
 array_lookup = { identifier ~ "[" ~ expression ~ "]"}
 
 expression = _{
-	array | array_lookup | return | assign | if_else | if | while_loop | boolean | call | structInit | structFieldRef | integer | string | identifier | reference | operation    
+	array | array_lookup | return | yield | assign | if_else | if | while_loop | boolean | call | structInit | structFieldRef | integer | string | identifier | reference | operation    
 }
 
 condition = _{ expression }
@@ -107,7 +108,7 @@ inoutAccess =  { "inout" }
 functionBody = { (stmt)* }
 
 functionKeyword = { identifier* }
-functionType = { "fn " | "extern fn "}
+functionType = { "fn " | "extern fn " | "projection fn "}
 
 function = {   functionType ~ identifier ~ "(" ~ functionArgs? ~ ")" ~ ("->" ~ type )? ~  ( "{" ~ functionBody ~ "}" | ";") }
 

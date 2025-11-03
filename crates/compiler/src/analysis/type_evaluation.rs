@@ -129,6 +129,13 @@ fn check_types(
     debug!("evaluating type for instruction: {:?}", instruction);
 
     match instruction {
+        Instruction::YieldingCall(_, _, receiver, return_type_name_id) => {
+            let type_name = ctx.ir_program.type_names.get(*return_type_name_id).unwrap();
+            let Some(type_ssaid) = bc_ctx.type_name_ids.get(type_name) else {
+                bail!("failed to find type ssaid for type name: {:#?}", type_name);
+            };
+            bc_ctx.variable_types.insert(*receiver, *type_ssaid);
+        }
         Instruction::Call(_, _, receiver, return_type_name_id) => {
             let type_name = ctx.ir_program.type_names.get(*return_type_name_id).unwrap();
             let Some(type_ssaid) = bc_ctx.type_name_ids.get(type_name) else {

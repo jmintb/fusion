@@ -97,12 +97,17 @@ impl FunctionDeclaration {
     pub fn parameter_access_modes(&self) -> impl Iterator<Item = AccessModes> + '_ {
         self.arguments.iter().map(|argument| argument.access_mode)
     }
+
+    pub fn is_yielding(&self) -> bool {
+        self.keywords.contains(&FunctionKeyword::Projection)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Hash)]
 pub enum FunctionKeyword {
     LlvmExtern,
     Normal,
+    Projection,
 }
 
 impl TryFrom<String> for FunctionKeyword {
@@ -112,6 +117,7 @@ impl TryFrom<String> for FunctionKeyword {
         Ok(match value.as_str().trim() {
             "extern fn" => FunctionKeyword::LlvmExtern,
             "fn" => FunctionKeyword::Normal,
+            "projection fn" => FunctionKeyword::Projection,
             _ => bail!("invalid function keyword: {}", value),
         })
     }
@@ -187,6 +193,7 @@ pub enum Expression {
     Assign(Assign),
     Assignment(Assignment),
     Return(Return),
+    Yield(Yield),
     Array(Array),
     ArrayLookup(ArrayLookup),
     Block(BlockID),
@@ -315,6 +322,11 @@ pub struct Array {
 #[derive(Debug, Clone)]
 pub struct Return {
     pub expression: Option<ExpressionID>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Yield {
+    pub expression: ExpressionID,
 }
 
 #[derive(Debug, Clone)]

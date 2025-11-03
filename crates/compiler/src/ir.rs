@@ -14,7 +14,7 @@ use crate::{
         nodes::{
             AccessModes, Array, ArrayLookup, Assign, Assignment, Call, Expression, FunctionArg,
             Identifier, IfElseStatement, IfStatement, Operation, Operator, Return, StructFieldPath,
-            StructInit, Value, While,
+            StructInit, Value, While, Yield,
         },
         Ast, NodeDatabase,
     },
@@ -64,6 +64,7 @@ pub struct IrProgram {
     pub top_level_block: BlockId,
     pub struct_field_identifier: Vec<Identifier>,
     pub type_names: FlatEntityStore<TypeName, usize>,
+    pub projections: BTreeMap<Ssaid, Vec<Ssaid>>,
 }
 
 impl IrProgram {
@@ -149,7 +150,7 @@ pub enum Instruction {
     Subtraction(Ssaid, Ssaid, Ssaid),
     GreaterThan(Ssaid, Ssaid, Ssaid),
     LessThan(Ssaid, Ssaid, Ssaid),
-    InitArray(Vec<Ssaid>, Ssaid, Ssaid), // TODO: Could this be something more general like calling a function?, do we need access modes here, in in function calls?
+    InitArray(Vec<Ssaid>, Ssaid, Ssaid),
     ArrayLookup {
         array: Ssaid,
         index: Ssaid,
@@ -162,10 +163,12 @@ pub enum Instruction {
     MutBorrow(Ssaid),
     MutBorrowEnd(Ssaid),
     Drop(Ssaid),
-    Call(FunctionId, Vec<(Ssaid, AccessModes)>, Ssaid, usize),
-    ResultlessCall(FunctionId, Vec<(Ssaid, AccessModes)>),
+    Call(FunctionId, Vec<Ssaid>, Ssaid, usize),
+    ResultlessCall(FunctionId, Vec<Ssaid>),
+    YieldingCall(FunctionId, Vec<Ssaid>, Ssaid, usize),
     AssignFnArg(Ssaid, usize, usize),
     Return(Option<Ssaid>),
+    Yield(Ssaid),
     IfElse(Ssaid, BlockId, BlockId),
     If(Ssaid, BlockId),
     AnonymousValue(Ssaid),
@@ -435,15 +438,28 @@ impl Instruction {
                     ssa_variables.get(id).unwrap().original_variable.0
                 )
             }
+            Self::YieldingCall(function_id, args, result_id, _) => {
+                format!(
+                    "receiver_{:?} = yielding@{}({})",
+                    result_id,
+                    function_id.0 .0,
+                    args.iter()
+                        .map(|variable_id| format!(
+                            "{}_{},",
+                            variable_id.0,
+                            ssa_variables.get(variable_id).unwrap().original_variable.0
+                        ))
+                        .fold(String::new(), |acc, next| format!("{} {}", acc, next))
+                )
+            }
             Self::Call(function_id, args, result_id, _) => {
                 format!(
                     "receiver_{:?} = @{}({})",
                     result_id,
                     function_id.0 .0,
                     args.iter()
-                        .map(|(variable_id, access_mode)| format!(
-                            "{} {}_{},",
-                            access_mode,
+                        .map(|variable_id| format!(
+                            "{}_{},",
                             variable_id.0,
                             ssa_variables.get(variable_id).unwrap().original_variable.0
                         ))
@@ -455,9 +471,8 @@ impl Instruction {
                     "@{}({})",
                     function_id.0 .0,
                     args.iter()
-                        .map(|(variable_id, access_mode)| format!(
-                            "{} {}_{},",
-                            access_mode,
+                        .map(|variable_id| format!(
+                            "{}_{},",
                             variable_id.0,
                             ssa_variables.get(variable_id).unwrap().original_variable.0
                         ))
@@ -466,6 +481,7 @@ impl Instruction {
             }
             Self::Return(None) => "return".to_string(),
             Self::Return(Some(val)) => format!("return {}", val.0),
+            Self::Yield(val) => format!("yield {}", val.0),
         }
     }
 }
@@ -497,6 +513,7 @@ pub struct IrGenerator {
     type_ssaids: BTreeMap<crate::ast::nodes::Type, Ssaid>,
     struct_field_identifier: Vec<Identifier>,
     type_names: FlatEntityStore<TypeName, usize>,
+    projections: BTreeMap<Ssaid, Vec<Ssaid>>,
 }
 
 use crate::types;
@@ -537,6 +554,7 @@ impl IrGenerator {
             type_ssaids: BTreeMap::new(),
             struct_field_identifier: Vec::new(),
             type_names: FlatEntityStore::new(),
+            projections: BTreeMap::new(),
         }
     }
 
@@ -610,6 +628,14 @@ impl IrGenerator {
         }
 
         self.block_results.insert(block_id, ssaid);
+    }
+
+    fn track_projection(&mut self, projectee: Ssaid, projectors: Vec<Ssaid>) {
+        if self.projections.contains_key(&projectee) {
+            panic!("found existing projection for variable {:?}", projectee);
+        }
+
+        self.projections.insert(projectee, projectors);
     }
 
     fn latest_gen_variable(&self, var_id: Identifier) -> Option<Ssaid> {
@@ -775,6 +801,7 @@ impl IrGenerator {
             struct_field_identifier: self.struct_field_identifier,
             top_level_block,
             type_names: self.type_names,
+            projections: self.projections,
         }
     }
 
@@ -945,7 +972,6 @@ impl IrGenerator {
                 function_id,
                 arguments,
             }) => {
-                // TODO: Use actual function type and not just circumvent using declarations.
                 let function_declaration_id = &self
                     .node_db
                     .get_function_declaration_id_from_identifier(function_id.clone())
@@ -978,7 +1004,7 @@ impl IrGenerator {
 
                 let argument_types = function_declaration.arguments.clone();
 
-                let mut function_args = Vec::new();
+                let mut function_args: Vec<Ssaid> = Vec::new();
                 let mut free_instructions = Vec::new();
                 let mut setup_instructions = Vec::new();
 
@@ -992,16 +1018,36 @@ impl IrGenerator {
                         let access_instruction = self.get_access_instruction(ssa_var);
                         setup_instructions.push(access_instruction.clone());
                         self.add_instruction(current_block, access_instruction);
-                        function_args.push((ssa_var, argument_types[i].access_mode));
+                        function_args.push(ssa_var);
+
+                        // For yielding functions we extend the lifetime of the arguments to that of the returned value.
+                        if function_declaration.is_yielding() {
+                            continue;
+                        }
 
                         if let Some(release_instruction) = self
                             .get_access_instruction(ssa_var)
                             .get_inverse_instruction()
                         {
                             match release_instruction {
-                                Instruction::BorrowEnd(_borrowd_var) => {
+                                Instruction::BorrowEnd(_) => {
+                                    // TODO: This check should not be necessary
                                     if !free_instructions.contains(&release_instruction) {
                                         free_instructions.push(release_instruction);
+
+                                        if let Some(projectees) = self.projections.get(&ssa_var) {
+                                            for projectee in projectees {
+                                                let Some(projectee_release_instruction) = self
+                                                    .get_access_instruction(*projectee)
+                                                    .get_inverse_instruction()
+                                                else {
+                                                    panic!("Projectee must have a access and release instruction")
+                                                };
+
+                                                free_instructions
+                                                    .push(projectee_release_instruction);
+                                            }
+                                        }
                                     }
                                 }
                                 _ => free_instructions.push(release_instruction),
@@ -1015,6 +1061,10 @@ impl IrGenerator {
                 // TODO: we should not be interacting with types at this stage.
                 let result = match function_return_type {
                     types::Type::Unit => {
+                        if function_declaration.is_yielding() {
+                            panic!("A yielding function must return a value");
+                        }
+
                         self.add_instruction(
                             current_block,
                             Instruction::ResultlessCall(
@@ -1031,11 +1081,28 @@ impl IrGenerator {
                     _ => {
                         let return_type_name_id = self
                             .type_names
-                            .insert(function_declaration.return_type.unwrap());
+                            .insert(function_declaration.return_type.to_owned().unwrap());
                         let function_call_result_reciever = self
                             .add_ssa_variable(Identifier::new(format!("{}_result", function_id.0)));
-                        self.add_instruction(
-                            current_block,
+
+                        let instruction = if function_declaration.is_yielding() {
+                            // TODO: this control flow is horrible
+                            self.track_projection(
+                                function_call_result_reciever,
+                                function_args.clone(),
+                            );
+
+                            Instruction::YieldingCall(
+                                FunctionId(
+                                    self.node_db
+                                        .get_function_declaration_id_from_identifier(function_id)
+                                        .unwrap(),
+                                ),
+                                function_args,
+                                function_call_result_reciever,
+                                return_type_name_id,
+                            )
+                        } else {
                             Instruction::Call(
                                 FunctionId(
                                     self.node_db
@@ -1045,8 +1112,9 @@ impl IrGenerator {
                                 function_args,
                                 function_call_result_reciever,
                                 return_type_name_id,
-                            ),
-                        );
+                            )
+                        };
+                        self.add_instruction(current_block, instruction);
 
                         self.set_ssaid_type(function_call_result_reciever, function_return_type);
 
@@ -1193,6 +1261,11 @@ impl IrGenerator {
                         body: body_block,
                     },
                 );
+            }
+            Expression::Yield(Yield { expression }) => {
+                let (result_block, result) = self.convert_expression(expression, current_block);
+                self.add_instruction(result_block, Instruction::Yield(result.unwrap()));
+                current_block = result_block
             }
 
             Expression::Return(Return { expression }) => {

@@ -41,7 +41,6 @@ pub fn insert_free(
                 };
                 let mut offset = 1;
                 let address = if cfg.is_in_cycle(&target_block_id) {
-                    // debug!("{} is in cycle", variable_id.0);
                     let target_block_id = cfg
                         .find_cycle_successor(&target_block_id)
                         .unwrap_or_else(|| {

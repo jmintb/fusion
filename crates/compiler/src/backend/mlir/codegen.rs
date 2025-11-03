@@ -29,7 +29,7 @@ use melior::{
 };
 
 use crate::{
-    ast::{identifiers::FunctionDeclarationID, nodes::AccessModes},
+    ast::identifiers::FunctionDeclarationID,
     control_flow_graph::ControlFlowGraph,
     ir::{self, BlockId, FunctionId, IrProgram},
 };
@@ -580,7 +580,7 @@ impl<'ctx> CodeGen<'ctx> {
     fn gen_resultless_function_call<'a, 'c>(
         &self,
         function_id: FunctionId,
-        arguments: Vec<(Ssaid, AccessModes)>,
+        arguments: Vec<Ssaid>,
         block_references: &'a HashMap<usize, BlockRef<'c, 'a>>,
         variable_store: &HashMap<Ssaid, Value<'c, 'a>>,
         current_block_id: usize,
@@ -593,7 +593,7 @@ impl<'ctx> CodeGen<'ctx> {
         let argument_values = arguments
             .iter()
             .map(|arg_id| {
-                self.gen_variable_load(arg_id.0, block_references, variable_store, current_block_id)
+                self.gen_variable_load(*arg_id, block_references, variable_store, current_block_id)
                     .unwrap()
             })
             .collect::<Vec<Value>>();
@@ -676,7 +676,7 @@ impl<'ctx> CodeGen<'ctx> {
     fn gen_function_call<'a, 'c>(
         &self,
         function_id: FunctionId,
-        arguments: Vec<(Ssaid, AccessModes)>,
+        arguments: Vec<Ssaid>,
         block_references: &'a HashMap<usize, BlockRef<'c, 'a>>,
         variable_store: &HashMap<Ssaid, Value<'c, 'a>>,
         current_block_id: usize,
@@ -690,7 +690,7 @@ impl<'ctx> CodeGen<'ctx> {
         let argument_values = arguments
             .iter()
             .map(|arg_id| {
-                self.gen_variable_load(arg_id.0, block_references, variable_store, current_block_id)
+                self.gen_variable_load(*arg_id, block_references, variable_store, current_block_id)
                     .unwrap()
             })
             .collect::<Vec<Value>>();
@@ -1133,8 +1133,19 @@ impl<'ctx> CodeGen<'ctx> {
                     current_block_id,
                 )?;
 
-                //variable_store.get(result_reciever).cloned()
                 None
+            }
+            Instruction::YieldingCall(function_id, arguments, result_reciever, _) => {
+                self.gen_function_call(
+                    function_id.clone(),
+                    arguments.clone(),
+                    block_references,
+                    variable_store,
+                    current_block_id,
+                    result_reciever,
+                )?;
+
+                variable_store.get(result_reciever).cloned()
             }
             Instruction::Call(function_id, arguments, result_reciever, _) => {
                 self.gen_function_call(
@@ -1147,6 +1158,27 @@ impl<'ctx> CodeGen<'ctx> {
                 )?;
 
                 variable_store.get(result_reciever).cloned()
+            }
+            Instruction::Yield(result) => {
+                let return_values = {
+                    let val = self.gen_variable_load(
+                        *result,
+                        block_references,
+                        variable_store,
+                        current_block_id,
+                    )?;
+
+                    vec![val]
+                };
+
+                debug!("generating  instruction for block: {}", current_block_id);
+
+                // Currently yield effectively operates as a return which extends the lifetime of the function parameters.
+                current_block.append_operation(melior::dialect::func::r#return(
+                    &return_values,
+                    Location::unknown(self.context),
+                ));
+                None
             }
             Instruction::Return(result) => {
                 let return_values = if let Some(expression) = result {
