@@ -4,23 +4,31 @@ pub mod nodes;
 pub mod parser;
 pub mod scopes;
 
-use anyhow::{bail, Result};
 use std::collections::{HashMap, VecDeque};
+
+use anyhow::{bail, Result};
 use tracing::debug;
 
-use crate::identifiers::{IDGenerator, ID};
-
-use self::{
-    declarations::ModuleDeclaration,
-    identifiers::{BlockID, ExpressionID, ScopeID, StatementID},
-    nodes::{
-        Block, Expression, FunctionDeclaration, Identifier, IfElseStatement, IfStatement,
-        StructDeclaration, While,
-    },
+use self::declarations::ModuleDeclaration;
+use self::identifiers::{BlockID, ExpressionID, ScopeID, StatementID};
+use self::nodes::{
+    Block,
+    Expression,
+    FunctionDeclaration,
+    Identifier,
+    IfElseStatement,
+    IfStatement,
+    StructDeclaration,
+    While,
 };
 use super::ast::identifiers::{
-    DeclarationID, FunctionDeclarationID, ModuleDeclarationID, NodeID, StructDeclarationID,
+    DeclarationID,
+    FunctionDeclarationID,
+    ModuleDeclarationID,
+    NodeID,
+    StructDeclarationID,
 };
+use crate::identifiers::{IDGenerator, ID};
 
 type WalkerFn<Ctx> = dyn FnMut(&NodeDatabase, NodeID, Option<NodeID>, &mut Ctx) -> Result<()>;
 

@@ -11,7 +11,7 @@ identifier = {
 
 assignment = { "let " ~ identifier  ~ "=" ~  expression  }
 
-assign = { identifier ~ "=" ~ expression }
+assign = { ( structFieldRef | identifier  ) ~ "=" ~ expression }
 
 inner = @{ char* }
 
@@ -70,6 +70,8 @@ named_type = { identifier }
 
 pointer = { "ptr" }
 
+comment = _{ "//" ~ (!"\n" ~ ANY)* }
+
 type = {
 	array_type | pointer | signed_integer | unsigned_integer | string_type | named_type
 }
@@ -108,7 +110,7 @@ inoutAccess =  { "inout" }
 functionBody = { (stmt)* }
 
 functionKeyword = { identifier* }
-functionType = { "fn " | "extern fn " | "projection fn "}
+functionType = { "fn " | "extern fn " | "projection fn " | "intrinsic fn "} // TODO: this is a hack
 
 function = {   functionType ~ identifier ~ "(" ~ functionArgs? ~ ")" ~ ("->" ~ type )? ~  ( "{" ~ functionBody ~ "}" | ";") }
 
@@ -123,5 +125,5 @@ structInit = { identifier ~ "{" ~ ( expression ~ ",")* ~ expression ? ~ "}" }
 
 structFieldRef = ${ identifier ~ "." ~ identifier }
 
-program = _{ SOI ~  (stmt )*  ~ EOI }
+program = _{ SOI ~  (stmt | comment )*  ~ EOI }
          

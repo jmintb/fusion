@@ -1,0 +1,86 @@
+---
+source: crates/compiler/src/ir/mod.rs
+expression: "format!(\"{}\", ir_progam)"
+---
+IR:
+fn 29:
+block_6
+0: 7_val = fnarg
+1: 8_len = fnarg
+2: 9_anonymous := Int(1)
+3: move(9_anonymous)
+4: 10_anonymous := "w"
+5: move(10_anonymous)
+6: receiver_Ssaid(11) = @4( 9_anonymous, 10_anonymous,)
+7: 12_stdoutptr = 11_fdopen_result
+8: move(11_fdopen_result)
+9: move(7_val)
+10: move(8_len)
+11: 13_anonymous := Int(1)
+12: move(13_anonymous)
+13: move(12_stdoutptr)
+14: receiver_Ssaid(14) = @6( 7_val, 8_len, 13_anonymous, 12_stdoutptr,)
+15: 15_res = 14_fwrite_result
+16: move(14_fwrite_result)
+17: 16_anonymous := Int(1)
+18: move(16_anonymous)
+19: 17_anonymous := "w"
+20: move(17_anonymous)
+21: receiver_Ssaid(18) = @4( 16_anonymous, 17_anonymous,)
+22: 19_stdoutptrb = 18_fdopen_result
+23: move(18_fdopen_result)
+24: move(19_stdoutptrb)
+25: receiver_Ssaid(20) = @8( 19_stdoutptrb,)
+26: 21_resb = 20_fflush_result
+27: move(20_fflush_result)
+28: return
+
+fn 56:
+block_22
+0: 23_anonymous := "test"
+1: 24_val = 23_anonymous
+2: move(23_anonymous)
+3: 25_anonymous := Int(0)
+4: 26_i = 25_anonymous
+5: move(25_anonymous)
+6: 29_anonymous := "hello\n"
+7: 30_anonymous := "world\n"
+8: move(29_anonymous)
+9: move(30_anonymous)
+10: array_init_result_Ssaid(28) = InitArray[ 29_anonymous, 30_anonymous,]
+11: 31_values = 28_@array_init_result
+12: move(28_@array_init_result)
+13: While block_BlockId(32)  { block_BlockId(35) }
+
+block_32
+0: 33_anonymous := Int(2)
+1: 34_@less_than_result = 26_i < 33_anonymous
+2: move(26_i)
+3: move(33_anonymous)
+
+block_35
+0: 36_anon = Project<24_val>
+1: move(36_anon)
+2: @59( 36_anon,)
+3: move(26_i)
+4: move(31_values)
+5: array_lookup_result_Ssaid(37) = ArrayLookup( 31_values, 26_i, 37_@array_lookup_result,)
+6: move(37_@array_lookup_result)
+7: 38_anonymous := Int(6)
+8: move(38_anonymous)
+9: @29( 37_@array_lookup_result, 38_anonymous,)
+10: 39_anonymous := Int(1)
+11: 40_@addition_result = 26_i + 39_anonymous
+12: move(26_i)
+13: move(39_anonymous)
+14: 26_i = 40_@addition_result
+15: move(40_@addition_result)
+
+block_41
+0: return
+
+fn 59:
+block_42
+0: 43_v = fnarg
+1: 43_v = Project<43_v>
+2: return

@@ -1,44 +1,51 @@
-use std::{
-    cell::{Ref, RefCell},
-    collections::{BTreeMap, HashMap},
-    rc::Rc,
-};
-
-use tracing::debug;
+use std::cell::{Ref, RefCell};
+use std::collections::{BTreeMap, HashMap};
+use std::rc::Rc;
 
 use anyhow::{bail, Result};
-
-use melior::{
-    dialect::{
-        arith,
-        func::{self},
-        llvm::{self, attributes::Linkage},
-        memref, scf, DialectRegistry,
-    },
-    ir::{
-        attribute::{FlatSymbolRefAttribute, IntegerAttribute, StringAttribute, TypeAttribute},
-        operation::OperationBuilder,
-        operation::OperationLike,
-        r#type::{FunctionType, IntegerType, MemRefType},
-        Attribute, Block, BlockLike, BlockRef, Identifier, Location, Module, Operation,
-        OperationRef, Region, RegionLike, Type, Value, ValueLike,
-    },
-    pass::{self},
-    utility::{register_all_dialects, register_all_llvm_translations},
-    Context, ExecutionEngine,
+use melior::dialect::func::{self};
+use melior::dialect::llvm::attributes::Linkage;
+use melior::dialect::llvm::{self};
+use melior::dialect::{arith, scf, DialectRegistry};
+use melior::ir::attribute::{
+    DenseI64ArrayAttribute,
+    FlatSymbolRefAttribute,
+    IntegerAttribute,
+    StringAttribute,
+    TypeAttribute,
 };
-
-use crate::{
-    ast::identifiers::FunctionDeclarationID,
-    control_flow_graph::ControlFlowGraph,
-    ir::{self, BlockId, FunctionId, IrProgram},
+use melior::ir::operation::{OperationBuilder, OperationLike};
+use melior::ir::r#type::{FunctionType, IntegerType, MemRefType};
+use melior::ir::{
+    Attribute,
+    Block,
+    BlockLike,
+    BlockRef,
+    Identifier,
+    Location,
+    Module,
+    Operation,
+    OperationRef,
+    Region,
+    RegionLike,
+    Type,
+    Value,
 };
+use melior::pass::{self};
+use melior::utility::{register_all_dialects, register_all_llvm_translations};
+use melior::{Context, ExecutionEngine};
+use tracing::debug;
 
 use crate::analysis::type_evaluation::IrProgramTypes;
+use crate::ast::identifiers::FunctionDeclarationID;
 use crate::ast::nodes;
 use crate::ast::nodes::FunctionKeyword;
-use crate::ir::Instruction;
-use crate::ir::Ssaid;
+use crate::backend::mlir::intrinsics::{
+    generate_intrinsic_call,
+    generate_resultless_intrinsic_call,
+};
+use crate::control_flow_graph::ControlFlowGraph;
+use crate::ir::{self, BlockId, FunctionId, Instruction, IrProgram, Ssaid};
 
 pub struct MlirGenerationConfig {
     pub program: IrProgram,
@@ -110,25 +117,22 @@ fn run_mlir_passes(context: &Context, module: &mut Module) {
     pass_manager.run(module).unwrap();
 }
 
-pub fn generate_mlir_string(cfg: MlirGenerationConfig) -> Result<String> {
-    let context = prepare_mlir_context();
-    let mut module = Module::new(melior::ir::Location::unknown(&context));
-    let mut code_gen = Box::new(CodeGen::new(
-        &context,
-        &module,
-        cfg.program,
-        cfg.program_types,
-    ));
-    code_gen.gen_code()?;
-    run_mlir_passes(&context, &mut module);
-
-    if cfg.verify_mlir {
-        assert!(module.as_operation().verify());
-    }
-    Ok(format!("{}", module.as_operation()))
-}
-
 use crate::types;
+
+fn get_variable_mlir_type<'c, 'a>(
+    context: &'c Context,
+    types: &IrProgramTypes,
+    ssa_id: &Ssaid,
+) -> melior::ir::Type<'a>
+where
+    'c: 'a,
+{
+    if types.is_projection(ssa_id) {
+        llvm::r#type::pointer(context, 0)
+    } else {
+        as_mlir_type(types.lookup_variable_type(*ssa_id).unwrap(), context, types)
+    }
+}
 
 pub fn as_mlir_type<'c, 'a>(
     fusion_type: types::Type,
@@ -149,7 +153,7 @@ where
             let fusion_element_type = types.comp_time_types.get(&array_type.element_type).unwrap();
             let element_type = as_mlir_type(*fusion_element_type, context, types);
 
-            MemRefType::new(element_type, &[array_type.length as i64], None, None).into()
+            llvm::r#type::array(element_type, array_type.length as u32)
         }
         types::Type::Struct(struct_type_id) => {
             let struct_type = types.struct_types.get(struct_type_id).unwrap();
@@ -190,8 +194,11 @@ where
 
 // TODO: move this into a struct with context
 
-struct CodeGen<'ctx> {
-    context: &'ctx Context,
+#[derive(Copy, Clone)]
+pub struct MlirBlockId(pub usize);
+
+pub struct CodeGen<'ctx> {
+    pub context: &'ctx Context,
     module: &'ctx Module<'ctx>,
     annon_string_counter: RefCell<usize>,
     program: IrProgram,
@@ -243,19 +250,33 @@ impl<'ctx> CodeGen<'ctx> {
 
         let argument_types = function_declaration
             .argument_types()
-            .map(|r#type| r#type.as_mlir_type(self.context, &HashMap::new()))
+            .map(|r#type| {
+                as_mlir_type(
+                    self.program_types[&self.program.entry_function_id]
+                        .lookup_type_name_type(r#type)
+                        .unwrap(),
+                    self.context,
+                    &self.program_types[&self.program.entry_function_id],
+                )
+            }) // TODO: need to actually types available to function declarations.
             .collect::<Vec<Type<'ctx>>>();
         let function_region = Region::new();
         let location = melior::ir::Location::unknown(self.context);
 
         if function_declaration.is_external() {
+            let return_type = as_mlir_type(
+                self.program_types[&self.program.entry_function_id]
+                    .lookup_type_name_type(&function_declaration.get_return_type())
+                    .unwrap(),
+                self.context,
+                &self.program_types[&self.program.entry_function_id],
+            );
+
             Ok(llvm::func(
                 self.context,
                 StringAttribute::new(self.context, &function_declaration.identifier.0),
                 TypeAttribute::new(llvm::r#type::function(
-                    function_declaration
-                        .get_return_type()
-                        .as_mlir_type(self.context, &HashMap::new()),
+                    return_type,
                     argument_types.as_slice(),
                     false,
                 )),
@@ -277,10 +298,117 @@ impl<'ctx> CodeGen<'ctx> {
         }
     }
 
+    pub fn append_operation<'c, 'a>(
+        &self,
+        block_id: usize,
+        block_references: &'a HashMap<usize, BlockRef<'c, 'a>>,
+        operation: Operation<'c>,
+    ) -> OperationRef<'c, 'a> {
+        let block = block_references[&block_id];
+
+        block.append_operation(operation)
+    }
+
+    fn gen_load_from_stack_operation<'c, 'a>(
+        &self,
+        current_block_id: usize,
+        block_references: &'a HashMap<usize, BlockRef<'c, 'a>>,
+        ptr: Value<'c, '_>,
+        mlir_type: Type<'c>,
+        location: Location<'c>,
+    ) -> OperationRef<'c, 'a>
+    where
+        'ctx: 'c,
+    {
+        let load_operation = llvm::load(self.context, ptr, mlir_type, location, Default::default());
+
+        self.append_operation(current_block_id, block_references, load_operation)
+    }
+
+    fn gen_allocate_on_stack_operation<'c, 'a>(
+        &self,
+        current_block_id: usize,
+        block_references: &'a HashMap<usize, BlockRef<'c, 'a>>,
+        mlir_type: Type<'c>,
+        location: Location<'c>,
+    ) -> OperationRef<'c, 'a>
+    where
+        'ctx: 'c,
+    {
+        // The type of the pointer returned from allocation. The recommendation seems to be to
+        // stick to untyped pointers in LLVM.
+        let ptr_type = melior::dialect::llvm::r#type::pointer(self.context, 0);
+
+        // The number of items to be allocated. This function assumes allocating
+        // a single item of type `mlir_type`.
+        let constant_one: Value = self
+            .append_operation(
+                current_block_id,
+                block_references,
+                melior::dialect::arith::constant(
+                    self.context,
+                    IntegerAttribute::new(IntegerType::new(self.context, 64).into(), 1_i64).into(),
+                    Location::unknown(self.context),
+                ),
+            )
+            .result(0)
+            .unwrap()
+            .into();
+
+        // The type of allocated item is set using `AllocaOptions`. Note this is not the type
+        // of the result. Rather this informs the compiler of the required size of the allocated
+        // memory on the stack.
+        let allocation_options =
+            llvm::AllocaOptions::new().elem_type(Some(TypeAttribute::new(mlir_type)));
+
+        let alloca_operation = llvm::alloca(
+            self.context,
+            constant_one,
+            ptr_type,
+            location,
+            allocation_options,
+        );
+
+        self.append_operation(current_block_id, block_references, alloca_operation)
+    }
+
+    pub fn save_value_to_variable<'c, 'a>(
+        &self,
+        current_block_id: usize,
+        block_references: &'a HashMap<usize, BlockRef<'c, 'a>>,
+        value: Value<'c, 'a>,
+        variable_id: &Ssaid,
+        variable_store: &HashMap<Ssaid, Value<'c, 'a>>,
+        location: Location<'c>,
+    ) {
+        let variable_pointer = variable_store[variable_id];
+        self.gen_store_operation(
+            current_block_id,
+            block_references,
+            value,
+            variable_pointer,
+            location,
+        );
+    }
+
+    pub fn gen_store_operation<'c, 'a>(
+        &self,
+        current_block_id: usize,
+        block_references: &'a HashMap<usize, BlockRef<'c, 'a>>,
+        value: Value<'c, 'a>,
+        ptr: Value<'c, 'a>,
+        location: Location<'c>,
+    ) {
+        let store_operation = llvm::store(self.context, value, ptr, location, Default::default());
+
+        self.append_operation(current_block_id, block_references, store_operation);
+    }
+
     fn gen_locals<'c, 'a>(
         &self,
-        entry_block: &'c BlockRef<'c, 'a>,
+        entry_block_id: usize,
         function_decl_id: &FunctionDeclarationID,
+        block_references: &'a HashMap<usize, BlockRef<'c, 'a>>,
     ) -> HashMap<Ssaid, Value<'c, 'a>>
     where
         'ctx: 'c,
@@ -288,6 +416,7 @@ impl<'ctx> CodeGen<'ctx> {
         let mut locals = HashMap::<Ssaid, Value<'c, 'a>>::new();
         let local_ir_variables = &self.program.ssa_variables[function_decl_id];
         let function_types = self.program_types.get(function_decl_id).unwrap();
+        let entry_block = block_references[&entry_block_id];
 
         debug!("local types: {:#?}", function_types);
 
@@ -309,30 +438,59 @@ impl<'ctx> CodeGen<'ctx> {
             };
 
             debug!("found type {:?} for ssa id {:?}", fusion_type, ssa_id);
-            let inner_type = as_mlir_type(
-                *fusion_type,
+            let inner_type = get_variable_mlir_type(
                 self.context,
                 self.program_types.get(function_decl_id).unwrap(),
+                ssa_id,
             );
-            let variable_allocation_op = melior::dialect::memref::alloca(
-                self.context,
-                MemRefType::new(inner_type, &[], None, None),
-                &[],
-                &[],
-                None,
-                Location::unknown(self.context),
-            );
-            let variable_mlir_value: Value = entry_block
-                .append_operation(variable_allocation_op)
+
+            let variable_ptr: Value = self
+                .gen_allocate_on_stack_operation(
+                    entry_block_id,
+                    block_references,
+                    inner_type,
+                    Location::unknown(self.context),
+                )
                 .result(0)
                 .unwrap()
                 .into();
-            locals.insert(*ssa_id, variable_mlir_value);
+
+            locals.insert(*ssa_id, variable_ptr);
+
+            // Fill out the value the projection points to.
+            if function_types.is_projection(ssa_id) {
+                let inner_type = as_mlir_type(*fusion_type, self.context, function_types);
+                let variable_inner_mlir_value = self
+                    .gen_allocate_on_stack_operation(
+                        entry_block_id,
+                        block_references,
+                        inner_type,
+                        Location::unknown(self.context),
+                    )
+                    .result(0)
+                    .unwrap()
+                    .into();
+
+                self.gen_store_operation(
+                    entry_block_id,
+                    block_references,
+                    variable_inner_mlir_value,
+                    variable_ptr,
+                    Location::unknown(self.context),
+                );
+            }
 
             let key = ssa_id;
             if self.program.static_values.contains_key(key) {
                 let value = &self.program.static_values[key];
                 let ptr = locals.get(key).unwrap();
+                let ptr = if self.program_types[&self.current_fn_decl_id].is_projection(key) {
+                    &self
+                        .gen_variable_load(*key, block_references, &locals, entry_block_id)
+                        .unwrap()
+                } else {
+                    ptr
+                };
 
                 match value {
                     nodes::Value::Integer(int) => {
@@ -350,11 +508,12 @@ impl<'ctx> CodeGen<'ctx> {
                             .unwrap()
                             .into();
 
-                        let store_op = melior::dialect::memref::store(
+                        let store_op = melior::dialect::llvm::store(
+                            self.context,
                             integer_val,
                             *ptr,
-                            &[],
                             melior::ir::Location::unknown(self.context),
+                            Default::default(),
                         );
 
                         entry_block.append_operation(store_op);
@@ -366,17 +525,18 @@ impl<'ctx> CodeGen<'ctx> {
                         let val = val.replace("\\n", "\n");
 
                         let value: Value = self
-                            .gen_pointer_to_annon_str(entry_block, val.to_string())
+                            .gen_pointer_to_annon_str(&entry_block, val.to_string())
                             .unwrap()
                             .result(0)
                             .unwrap()
                             .into();
 
-                        let store_op = melior::dialect::memref::store(
+                        let store_op = melior::dialect::llvm::store(
+                            self.context,
                             value,
                             *ptr,
-                            &[],
                             melior::ir::Location::unknown(self.context),
+                            Default::default(),
                         );
 
                         entry_block.append_operation(store_op);
@@ -411,17 +571,22 @@ impl<'ctx> CodeGen<'ctx> {
             .get(function_decl_id)
             .unwrap();
 
-        let function_argument_types = function_declaration
-            .arguments
-            .iter()
-            .map(|arg_type| {
-                arg_type
-                    .r#type
-                    .as_ref()
-                    .unwrap()
-                    .as_mlir_type(self.context, &HashMap::new())
-            })
-            .collect::<Vec<Type<'_>>>();
+        let function_argument_types: Vec<Type> = if let Some(function_arguments) =
+            self.program.function_arguments.get(function_decl_id)
+        {
+            function_arguments
+                .iter()
+                .map(|argument_id| {
+                    get_variable_mlir_type(
+                        self.context,
+                        &self.program_types[function_decl_id],
+                        argument_id,
+                    )
+                })
+                .collect()
+        } else {
+            Vec::new()
+        };
 
         debug!(
             "creating function entry block with arguments: {}",
@@ -439,8 +604,7 @@ impl<'ctx> CodeGen<'ctx> {
         let borrow_regions = regions.borrow();
 
         let result = self.pre_gen_blocks(cfg, &function_region, &borrow_regions, current_block)?;
-        let entry_block_ref = result[&cfg.entry_point.0];
-        let local_variable_store = self.gen_locals(&entry_block_ref, function_decl_id);
+        let local_variable_store = self.gen_locals(cfg.entry_point.0, function_decl_id, &result);
 
         // TODO: sort out how to handle entry block and fn args. use first block in region maybe?
 
@@ -479,10 +643,13 @@ impl<'ctx> CodeGen<'ctx> {
 
         let function_region = function_region;
         let function_identifier = function_declaration.identifier.0.clone();
-        let return_type = function_declaration
-            .return_type
-            .as_ref()
-            .unwrap_or(&nodes::Type::Unit);
+        let return_type = as_mlir_type(
+            self.program_types[&self.program.entry_function_id]
+                .lookup_type_name_type(&function_declaration.get_return_type())
+                .unwrap(),
+            self.context,
+            &self.program_types[&self.program.entry_function_id],
+        );
 
         let function_decl = if &function_identifier == "main" {
             func::func(
@@ -515,7 +682,7 @@ impl<'ctx> CodeGen<'ctx> {
                 self.context,
                 StringAttribute::new(self.context, &function_identifier),
                 TypeAttribute::new(llvm::r#type::function(
-                    return_type.as_mlir_type(self.context, &HashMap::new()),
+                    return_type,
                     function_argument_types.as_slice(),
                     false,
                 )),
@@ -533,7 +700,7 @@ impl<'ctx> CodeGen<'ctx> {
                 location,
             )
         } else {
-            let mlir_return_type = vec![return_type.as_mlir_type(self.context, &HashMap::new())];
+            let mlir_return_type = vec![return_type];
 
             func::func(
                 self.context,
@@ -551,7 +718,7 @@ impl<'ctx> CodeGen<'ctx> {
         Ok(function_decl)
     }
 
-    fn gen_variable_load<'a, 'c>(
+    pub fn gen_variable_load<'a, 'c>(
         &self,
         id: Ssaid,
         block_references: &'a HashMap<usize, BlockRef<'c, 'a>>,
@@ -564,11 +731,36 @@ impl<'ctx> CodeGen<'ctx> {
     {
         debug!("generating variabe load for {:?}", id);
         let value = variable_store.get(&id).unwrap().to_owned();
+
         debug!("found value {:?}", value);
         let current_block = block_references.get(&current_block).unwrap();
         let location = melior::ir::Location::unknown(self.context);
+
+        let function_types = self.program_types.get(&self.current_fn_decl_id).unwrap();
+
+        let fusion_type = if function_types.variable_types.contains_key(&id) {
+            &function_types
+                .lookup_variable_type(id)
+                .unwrap_or_else(|_| panic!("failed to find type for: {:?}", id))
+        } else {
+            panic!("failed to find type for {:?}", id);
+        };
+
+        debug!("found type {:?} for ssa id {:?}", fusion_type, id);
+        let inner_type = get_variable_mlir_type(
+            self.context,
+            self.program_types.get(&self.current_fn_decl_id).unwrap(),
+            &id,
+        );
+
         let result: Value = current_block
-            .append_operation(memref::load(value, &[], location))
+            .append_operation(llvm::load(
+                self.context,
+                value,
+                inner_type,
+                location,
+                Default::default(),
+            ))
             .result(0)?
             .into();
 
@@ -607,12 +799,14 @@ impl<'ctx> CodeGen<'ctx> {
             .get(&function_id.0)
             .unwrap();
 
-        let _return_type = function_declaration
-            .return_type
-            .as_ref()
-            .unwrap_or(&nodes::Type::Unit);
-
         let return_type = &nodes::Type::Unit;
+        let return_type = as_mlir_type(
+            self.program_types[&self.program.entry_function_id]
+                .lookup_type_name_type(return_type)
+                .unwrap(),
+            self.context,
+            &self.program_types[&self.program.entry_function_id],
+        );
 
         let location = melior::ir::Location::unknown(self.context);
 
@@ -631,18 +825,14 @@ impl<'ctx> CodeGen<'ctx> {
                     FlatSymbolRefAttribute::new(self.context, &function_declaration.identifier.0)
                         .into(),
                 )])
-                .add_results(&[return_type.as_mlir_type(self.context, &HashMap::new())])
+                .add_results(&[return_type])
                 .build()?
         } else {
             debug!(
                 "generating call operation for internal function {} with return type {:?}",
                 function_declaration.identifier.0, return_type
             );
-            let return_types = if let nodes::Type::Unit = return_type {
-                Vec::new()
-            } else {
-                vec![return_type.as_mlir_type(self.context, &HashMap::new())]
-            };
+            let return_types = { Vec::new() };
 
             func::call(
                 self.context,
@@ -671,6 +861,46 @@ impl<'ctx> CodeGen<'ctx> {
         } else {
             Ok(())
         }
+    }
+
+    // We don't make use of locations currently, so this is used as a sort of default value.
+    // TODO: Is there something we could use the location for in an MLIR context?
+    pub fn unknown_location(&self) -> Location<'_> {
+        Location::unknown(self.context)
+    }
+
+    pub fn integer_attribute(&self, bit_width: u32, value: i64) -> IntegerAttribute<'_> {
+        IntegerAttribute::new(IntegerType::new(self.context, bit_width).into(), value)
+    }
+
+    // See https://mlir.llvm.org/docs/Rationale/Rationale/#integer-signedness-semantics for a not
+    // on unsigned integers in MLIR and LLVM.
+    pub fn signless_integer_type(&self, bit_width: u32) -> IntegerType<'_> {
+        melior::ir::r#type::IntegerType::new(self.context, bit_width)
+    }
+
+    pub fn opaque_pointer_type(&self) -> Type<'_> {
+        // TODO: consider making this static somehow?
+        llvm::r#type::pointer(self.context, 0)
+    }
+
+    pub fn load_variables<'c, 'a>(
+        &self,
+        variables: &[Ssaid],
+        block_references: &'a HashMap<usize, BlockRef<'c, 'a>>,
+        variable_store: &HashMap<Ssaid, Value<'c, 'a>>,
+        current_block: MlirBlockId,
+    ) -> Result<Vec<Value<'c, 'a>>>
+    where
+        'ctx: 'c,
+        'a: 'c,
+    {
+        variables
+            .iter()
+            .map(|arg_id| {
+                self.gen_variable_load(*arg_id, block_references, variable_store, current_block.0)
+            })
+            .collect::<Result<Vec<Value>>>()
     }
 
     fn gen_function_call<'a, 'c>(
@@ -704,10 +934,18 @@ impl<'ctx> CodeGen<'ctx> {
             .get(&function_id.0)
             .unwrap();
 
-        let return_type = function_declaration
+        let original_return_type = function_declaration
             .return_type
             .as_ref()
             .unwrap_or(&nodes::Type::Unit);
+
+        let return_type = as_mlir_type(
+            self.program_types[&self.program.entry_function_id]
+                .lookup_type_name_type(original_return_type)
+                .unwrap(),
+            self.context,
+            &self.program_types[&self.program.entry_function_id],
+        );
 
         let location = melior::ir::Location::unknown(self.context);
 
@@ -726,17 +964,17 @@ impl<'ctx> CodeGen<'ctx> {
                     FlatSymbolRefAttribute::new(self.context, &function_declaration.identifier.0)
                         .into(),
                 )])
-                .add_results(&[return_type.as_mlir_type(self.context, &HashMap::new())])
+                .add_results(&[return_type])
                 .build()?
         } else {
             debug!(
                 "generating call operation for internal function {} with return type {:?}",
                 function_declaration.identifier.0, return_type
             );
-            let return_types = if let nodes::Type::Unit = return_type {
+            let return_types = if let nodes::Type::Unit = original_return_type {
                 Vec::new()
             } else {
-                vec![return_type.as_mlir_type(self.context, &HashMap::new())]
+                vec![return_type]
             };
 
             func::call(
@@ -754,14 +992,13 @@ impl<'ctx> CodeGen<'ctx> {
                 val, function_id, result_receiver
             );
 
-            //let ptr_val = current_block.append_operation(ptr).result(0).unwrap();
-
             let ptr_val = variable_store[result_receiver];
-            let store_op = melior::dialect::memref::store(
+            let store_op = melior::dialect::llvm::store(
+                self.context,
                 val.into(),
                 ptr_val,
-                &[],
                 melior::ir::Location::unknown(self.context),
+                Default::default(),
             );
 
             current_block.append_operation(store_op);
@@ -1048,11 +1285,12 @@ impl<'ctx> CodeGen<'ctx> {
         let value = current_block.append_operation(operation).result(0)?;
 
         let ptr_val = variable_store[&operation_variables.reciever];
-        let store_op = melior::dialect::memref::store(
+        let store_op = melior::dialect::llvm::store(
+            self.context,
             value.into(),
             ptr_val,
-            &[],
             melior::ir::Location::unknown(self.context),
+            Default::default(),
         );
 
         current_block.append_operation(store_op);
@@ -1092,26 +1330,50 @@ impl<'ctx> CodeGen<'ctx> {
                         position + 1
                     )
                 });
-
-                let _ptr = current_block
-                    .append_operation(memref::alloca(
-                        self.context,
-                        MemRefType::new(value_ref.r#type(), &[], None, None),
-                        &[],
-                        &[],
-                        None,
-                        location,
-                    ))
-                    .result(0)
-                    .unwrap();
-
                 // MOVE NEXT: get fn args into variable store.
                 let ptr = variable_store[id];
 
-                current_block.append_operation(memref::store(value_ref.into(), ptr, &[], location));
+                current_block.append_operation(llvm::store(
+                    self.context,
+                    value_ref.into(),
+                    ptr,
+                    location,
+                    Default::default(),
+                ));
 
                 // MOVE: move result reciever init to locals generation.
                 // variable_store.insert(*id, ptr.into());
+                None
+            }
+            Instruction::Project {
+                reciever,
+                projector,
+            } => {
+                if reciever != projector {
+                    self.gen_projection(
+                        reciever,
+                        projector,
+                        current_block_id,
+                        block_references,
+                        variable_store,
+                    )?;
+                }
+
+                None
+            }
+            Instruction::StructAssign {
+                r#struct,
+                field_name_index,
+                reciever,
+            } => {
+                self.struct_field_assignment(
+                    r#struct,
+                    reciever,
+                    *field_name_index,
+                    current_block_id,
+                    block_references,
+                    variable_store,
+                )?;
                 None
             }
             Instruction::Assign(ref lhs_id, ref rhs_id) => {
@@ -1126,7 +1388,7 @@ impl<'ctx> CodeGen<'ctx> {
             }
             Instruction::ResultlessCall(function_id, arguments) => {
                 self.gen_resultless_function_call(
-                    function_id.clone(),
+                    *function_id,
                     arguments.clone(),
                     block_references,
                     variable_store,
@@ -1137,7 +1399,7 @@ impl<'ctx> CodeGen<'ctx> {
             }
             Instruction::YieldingCall(function_id, arguments, result_reciever, _) => {
                 self.gen_function_call(
-                    function_id.clone(),
+                    *function_id,
                     arguments.clone(),
                     block_references,
                     variable_store,
@@ -1147,9 +1409,32 @@ impl<'ctx> CodeGen<'ctx> {
 
                 variable_store.get(result_reciever).cloned()
             }
+            Instruction::CallResultlessIntrinsic(intrinsic_call) => {
+                generate_resultless_intrinsic_call(
+                    intrinsic_call,
+                    self,
+                    MlirBlockId(current_block_id),
+                    block_references,
+                    variable_store,
+                )?;
+
+                None
+            }
+            Instruction::CallIntrinsic(intrinsic_call) => {
+                generate_intrinsic_call(
+                    intrinsic_call,
+                    self,
+                    MlirBlockId(current_block_id),
+                    block_references,
+                    variable_store,
+                )?;
+
+                variable_store.get(&intrinsic_call.result_receiver).cloned()
+            }
+
             Instruction::Call(function_id, arguments, result_reciever, _) => {
                 self.gen_function_call(
-                    function_id.clone(),
+                    *function_id,
                     arguments.clone(),
                     block_references,
                     variable_store,
@@ -1228,11 +1513,12 @@ impl<'ctx> CodeGen<'ctx> {
 
                 let ptr_val = variable_store[result_reciever];
 
-                let store_op = melior::dialect::memref::store(
+                let store_op = melior::dialect::llvm::store(
+                    self.context,
                     value.into(),
                     ptr_val,
-                    &[],
                     melior::ir::Location::unknown(self.context),
+                    Default::default(),
                 );
 
                 current_block.append_operation(store_op);
@@ -1343,53 +1629,37 @@ impl<'ctx> CodeGen<'ctx> {
                     })
                     .collect::<Result<Vec<Value>>>()?;
 
-                let program_types = self.program_types.get(&self.current_fn_decl_id).unwrap();
-                let array_type = program_types.lookup_variable_type(*result_receiver)?;
-                let memref_type = as_memref_type(array_type, self.context, program_types);
-
-                let array_ptr = melior::dialect::memref::alloca(
-                    self.context,
-                    memref_type,
-                    &[],
-                    &[],
-                    None,
-                    Location::unknown(self.context),
-                );
-
-                let array_ptr_val: Value = current_block
-                    .append_operation(array_ptr)
-                    .result(0)
-                    .unwrap()
-                    .into();
+                let Ok(mut mlir_array_value) = self.gen_variable_load(
+                    *result_receiver,
+                    block_references,
+                    variable_store,
+                    current_block_id,
+                ) else {
+                    bail!("failed to find struct {}", result_receiver.0);
+                };
 
                 for (index, item) in item_values.into_iter().enumerate() {
-                    let index = current_block
-                        .append_operation(melior::dialect::index::constant(
+                    mlir_array_value = current_block
+                        .append_operation(llvm::insert_value(
                             self.context,
-                            IntegerAttribute::new(
-                                melior::ir::Type::index(self.context),
-                                index as i64,
-                            ),
+                            mlir_array_value,
+                            DenseI64ArrayAttribute::new(self.context, &[index as i64]),
+                            item,
                             location,
                         ))
                         .result(0)
-                        .unwrap();
-
-                    current_block.append_operation(memref::store(
-                        item,
-                        array_ptr_val,
-                        &[index.into()],
-                        location,
-                    ));
+                        .unwrap()
+                        .into();
                 }
 
                 let ptr_val: Value = variable_store[result_receiver];
 
-                let store_op = melior::dialect::memref::store(
-                    array_ptr_val,
+                let store_op = melior::dialect::llvm::store(
+                    self.context,
+                    mlir_array_value,
                     ptr_val,
-                    &[],
                     melior::ir::Location::unknown(self.context),
+                    Default::default(),
                 );
                 current_block.append_operation(store_op);
 
@@ -1442,11 +1712,12 @@ impl<'ctx> CodeGen<'ctx> {
 
                 let mlir_struct_ref = variable_store[receiver];
 
-                let store_op = melior::dialect::memref::store(
+                let store_op = melior::dialect::llvm::store(
+                    self.context,
                     mlir_struct_value,
                     mlir_struct_ref,
-                    &[],
                     melior::ir::Location::unknown(self.context),
+                    Default::default(),
                 );
                 current_block.append_operation(store_op);
 
@@ -1473,6 +1744,27 @@ impl<'ctx> CodeGen<'ctx> {
                     bail!("failed to find struct {}", r#struct.0);
                 };
 
+                let struct_ptr =
+                    if self.program_types[&self.current_fn_decl_id].is_projection(r#struct) {
+                        let field_type = program_types.lookup_variable_type(*r#struct)?;
+                        let field_mlir_type = as_mlir_type(field_type, self.context, program_types);
+
+                        let result: Value = self
+                            .gen_load_from_stack_operation(
+                                current_block_id,
+                                block_references,
+                                struct_ptr,
+                                field_mlir_type,
+                                location,
+                            )
+                            .result(0)?
+                            .into();
+
+                        result
+                    } else {
+                        struct_ptr
+                    };
+
                 let reciver_val = variable_store[receiver];
                 let field_type = program_types.lookup_variable_type(*receiver)?;
                 let field_mlir_type = as_mlir_type(field_type, self.context, program_types);
@@ -1493,7 +1785,13 @@ impl<'ctx> CodeGen<'ctx> {
                     .result(0)
                     .unwrap()
                     .into();
-                let store_op = memref::store(read_value, reciver_val, &[], location);
+                let store_op = llvm::store(
+                    self.context,
+                    read_value,
+                    reciver_val,
+                    location,
+                    Default::default(),
+                );
                 current_block.append_operation(store_op);
 
                 Some(read_value)
@@ -1511,38 +1809,58 @@ impl<'ctx> CodeGen<'ctx> {
                 ) else {
                     bail!("failed to find index {}", index.0);
                 };
-
-                let Ok(array_ptr) = self.gen_variable_load(
-                    *array,
-                    block_references,
-                    variable_store,
-                    current_block_id,
-                ) else {
+                let Some(array_ptr) = variable_store.get(array) else {
                     bail!("failed to find array {}", array.0);
                 };
 
-                let casted_index = current_block
-                    .append_operation(melior::dialect::index::casts(
-                        index_ptr,
-                        melior::ir::Type::index(self.context),
-                        location,
-                    ))
-                    .result(0)
-                    .unwrap();
+                let program_types = self.program_types.get(&self.current_fn_decl_id).unwrap();
+                let array_type = program_types.lookup_variable_type(*array)?;
+                let element_type = match array_type {
+                    types::Type::Array(array_type_id) => {
+                        let array_type = program_types.array_types.get(array_type_id).unwrap();
+                        let fusion_element_type = program_types
+                            .comp_time_types
+                            .get(&array_type.element_type)
+                            .unwrap();
+                        as_mlir_type(*fusion_element_type, self.context, program_types)
+                    }
+                    _ => panic!(),
+                };
+
+                let ptr_type = melior::dialect::llvm::r#type::pointer(self.context, 0);
 
                 let gep_op_2: Value = current_block
-                    .append_operation(memref::load(array_ptr, &[casted_index.into()], location))
+                    .append_operation(llvm::get_element_ptr_dynamic(
+                        self.context,
+                        *array_ptr,
+                        &[index_ptr],
+                        element_type,
+                        ptr_type,
+                        location,
+                    ))
                     .result(0)
                     .unwrap()
                     .into();
 
+                let load_element_val = current_block
+                    .append_operation(llvm::load(
+                        self.context,
+                        gep_op_2,
+                        element_type,
+                        location,
+                        Default::default(),
+                    ))
+                    .result(0)
+                    .unwrap();
+
                 let ptr_val: Value = variable_store[result];
 
-                let store_op = melior::dialect::memref::store(
-                    gep_op_2,
+                let store_op = melior::dialect::llvm::store(
+                    self.context,
+                    load_element_val.into(),
                     ptr_val,
-                    &[],
                     melior::ir::Location::unknown(self.context),
+                    Default::default(),
                 );
                 current_block.append_operation(store_op);
 
@@ -1563,7 +1881,7 @@ impl<'ctx> CodeGen<'ctx> {
 
     pub fn gen_pointer_to_annon_str<'a, 'c>(
         &self,
-        current_block: &'a Block<'c>,
+        current_block: &'a BlockRef<'c, 'a>,
         value: String,
     ) -> Result<OperationRef<'c, 'a>>
     where
@@ -1631,6 +1949,122 @@ impl<'ctx> CodeGen<'ctx> {
         Ok(current_block.append_operation(address_op))
     }
 
+    fn gen_projection<'parent_block, 'context, 'varc, 'this>(
+        &self,
+        lhs_id: &Ssaid,
+        rhs_id: &Ssaid,
+        current_block: usize,
+        block_references: &'this HashMap<usize, BlockRef<'context, 'parent_block>>,
+        variable_store: &'this HashMap<Ssaid, Value<'varc, 'parent_block>>,
+    ) -> Result<()>
+    where
+        'ctx: 'context,
+        'this: 'context,
+    {
+        let lhs_is_projection = self.program_types[&self.current_fn_decl_id].is_projection(lhs_id);
+        let rhs_is_projection = self.program_types[&self.current_fn_decl_id].is_projection(rhs_id);
+        assert!(lhs_is_projection);
+
+        debug!("generating assignment {:?} {:?}", lhs_id, rhs_id);
+        let rhs_value = if rhs_is_projection {
+            self.gen_variable_load(*rhs_id, block_references, variable_store, current_block)?
+        } else {
+            variable_store.get(rhs_id).unwrap().to_owned()
+        };
+        let lhs_ptr = variable_store.get(lhs_id).unwrap().to_owned();
+
+        self.gen_store_operation(
+            current_block,
+            block_references,
+            rhs_value,
+            lhs_ptr,
+            melior::ir::Location::unknown(self.context),
+        );
+
+        Ok(())
+    }
+
+    fn struct_field_assignment<'parent_block, 'context, 'varc, 'this>(
+        &self,
+        lhs_id: &Ssaid,
+        rhs_id: &Ssaid,
+        field_name_index: usize,
+        current_block_id: usize,
+        block_references: &'this HashMap<usize, BlockRef<'context, 'parent_block>>,
+        variable_store: &'this HashMap<Ssaid, Value<'varc, 'parent_block>>,
+    ) -> Result<()>
+    where
+        'ctx: 'context,
+        'this: 'context,
+    {
+        debug!("generating assignment {:?} {:?}", lhs_id, rhs_id);
+        let program_types = self.program_types.get(&self.current_fn_decl_id).unwrap();
+        let struct_type = program_types.lookup_variable_type(*lhs_id)?;
+        let struct_mlir_type = as_mlir_type(struct_type, self.context, program_types);
+        let rhs_value =
+            self.gen_variable_load(*rhs_id, block_references, variable_store, current_block_id)?;
+        let lhs_ptr = if self.program_types[&self.current_fn_decl_id].is_projection(lhs_id) {
+            let struct_ptr = self.gen_variable_load(
+                *lhs_id,
+                block_references,
+                variable_store,
+                current_block_id,
+            )?;
+
+            let result: Value = self
+                .gen_load_from_stack_operation(
+                    current_block_id,
+                    block_references,
+                    struct_ptr,
+                    struct_mlir_type,
+                    melior::ir::Location::unknown(self.context),
+                )
+                .result(0)?
+                .into();
+
+            result
+        } else {
+            self.gen_variable_load(*lhs_id, block_references, variable_store, current_block_id)?
+        };
+
+        let field_position = self.program_types[&self.current_fn_decl_id]
+            .calculate_struct_field_position(*lhs_id, field_name_index, &self.program)?;
+
+        let store_op = llvm::insert_value(
+            self.context,
+            lhs_ptr,
+            melior::ir::attribute::DenseI64ArrayAttribute::new(
+                self.context,
+                &[field_position as i64],
+            ),
+            rhs_value,
+            melior::ir::Location::unknown(self.context),
+        );
+
+        let lhs_ptr = if self.program_types[&self.current_fn_decl_id].is_projection(lhs_id) {
+            self.gen_variable_load(*lhs_id, block_references, variable_store, current_block_id)?
+        } else {
+            variable_store.get(lhs_id).unwrap().to_owned()
+        };
+
+        let current_block = block_references.get(&current_block_id).unwrap();
+        // TODO: we are assigning the entire struct here: just write to the field location instead.
+        let new_struct_val: Value = current_block
+            .append_operation(store_op)
+            .result(0)
+            .unwrap()
+            .into();
+        self.gen_store_operation(
+            current_block_id,
+            block_references,
+            new_struct_val,
+            lhs_ptr,
+            melior::ir::Location::unknown(self.context),
+        );
+
+        Ok(())
+    }
+
     fn gen_assignment<'parent_block, 'context, 'varc, 'this>(
         &self,
         lhs_id: &Ssaid,
@@ -1644,15 +2078,22 @@ impl<'ctx> CodeGen<'ctx> {
         'this: 'context,
     {
         debug!("generating assignment {:?} {:?}", lhs_id, rhs_id);
+
+        let lhs_is_projection = self.program_types[&self.current_fn_decl_id].is_projection(lhs_id);
+        let rhs_is_projection = self.program_types[&self.current_fn_decl_id].is_projection(rhs_id);
+        assert!(lhs_is_projection == rhs_is_projection);
+
         let rhs_value =
             self.gen_variable_load(*rhs_id, block_references, variable_store, current_block)?;
+
         let lhs_ptr = variable_store.get(lhs_id).unwrap().to_owned();
 
-        let store_op = melior::dialect::memref::store(
+        let store_op = melior::dialect::llvm::store(
+            self.context,
             rhs_value,
             lhs_ptr,
-            &[],
             melior::ir::Location::unknown(self.context),
+            Default::default(),
         );
 
         let current_block = block_references.get(&current_block).unwrap();
@@ -1665,10 +2106,30 @@ impl<'ctx> CodeGen<'ctx> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use std::path::PathBuf;
+
     use anyhow::Result;
     use rstest::rstest;
-    use std::path::PathBuf;
+
+    use super::*;
+
+    fn generate_mlir_string(cfg: MlirGenerationConfig) -> Result<String> {
+        let context = prepare_mlir_context();
+        let mut module = Module::new(melior::ir::Location::unknown(&context));
+        let mut code_gen = Box::new(CodeGen::new(
+            &context,
+            &module,
+            cfg.program,
+            cfg.program_types,
+        ));
+        code_gen.gen_code()?;
+        run_mlir_passes(&context, &mut module);
+
+        if cfg.verify_mlir {
+            assert!(module.as_operation().verify());
+        }
+        Ok(format!("{}", module.as_operation()))
+    }
 
     #[rstest]
     #[test_log::test]

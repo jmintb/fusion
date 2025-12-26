@@ -1,0 +1,77 @@
+---
+source: crates/compiler/src/ir/mod.rs
+expression: "format!(\"{}\", ir_progam)"
+---
+IR:
+fn 29:
+block_6
+0: 7_val = fnarg
+1: 8_len = fnarg
+2: 9_anonymous := Int(1)
+3: move(9_anonymous)
+4: 10_anonymous := "w"
+5: move(10_anonymous)
+6: receiver_Ssaid(11) = @4( 9_anonymous, 10_anonymous,)
+7: 12_stdoutptr = 11_fdopen_result
+8: move(11_fdopen_result)
+9: move(7_val)
+10: move(8_len)
+11: 13_anonymous := Int(1)
+12: move(13_anonymous)
+13: move(12_stdoutptr)
+14: receiver_Ssaid(14) = @6( 7_val, 8_len, 13_anonymous, 12_stdoutptr,)
+15: 15_res = 14_fwrite_result
+16: move(14_fwrite_result)
+17: 16_anonymous := Int(1)
+18: move(16_anonymous)
+19: 17_anonymous := "w"
+20: move(17_anonymous)
+21: receiver_Ssaid(18) = @4( 16_anonymous, 17_anonymous,)
+22: 19_stdoutptrb = 18_fdopen_result
+23: move(18_fdopen_result)
+24: move(19_stdoutptrb)
+25: receiver_Ssaid(20) = @8( 19_stdoutptrb,)
+26: 21_resb = 20_fflush_result
+27: move(20_fflush_result)
+28: return
+
+fn 51:
+block_22
+0: 23_anonymous := "test"
+1: 24_val = 23_anonymous
+2: move(23_anonymous)
+3: 25_anonymous := Int(0)
+4: 26_i = 25_anonymous
+5: move(25_anonymous)
+6: While block_BlockId(27)  { block_BlockId(30) }
+
+block_27
+0: 28_anonymous := Int(10)
+1: 29_@less_than_result = 26_i < 28_anonymous
+2: move(26_i)
+3: move(28_anonymous)
+
+block_30
+0: 31_anonymous := "test2"
+1: 32_val = 31_anonymous
+2: move(31_anonymous)
+3: 33_anonymous := Int(1)
+4: 34_@addition_result = 26_i + 33_anonymous
+5: move(26_i)
+6: move(33_anonymous)
+7: 26_i = 34_@addition_result
+8: move(34_@addition_result)
+9: move(32_val)
+10: 35_anon = Project<26_i>
+11: move(35_anon)
+12: @54( 32_val, 35_anon,)
+
+block_36
+0: return
+
+fn 54:
+block_37
+0: 38_input = fnarg
+1: 39_j = fnarg
+2: 39_j = Project<39_j>
+3: return

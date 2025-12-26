@@ -3,78 +3,84 @@ source: crates/compiler/src/ir.rs
 expression: "format!(\"{}\", ir_progam)"
 ---
 IR:
-fn 17:
+fn 27:
 block_6
 0: 7_val = fnarg
 1: 8_len = fnarg
 2: 9_anonymous := Int(1)
-3: borrow(9_anonymous)
+3: move(9_anonymous)
 4: 10_anonymous := "w"
-5: borrow(10_anonymous)
-6: receiver_Ssaid(11) = @0( 9_anonymous, 10_anonymous,)
-7: borrow_end(9_anonymous)
-8: borrow_end(10_anonymous)
-9: 12_stdoutptr = 11_fdopen_result
-10: move(11_fdopen_result)
-11: borrow(7_val)
-12: borrow(8_len)
-13: 13_anonymous := Int(1)
-14: borrow(13_anonymous)
-15: borrow(12_stdoutptr)
-16: receiver_Ssaid(14) = @2( 7_val, 8_len, 13_anonymous, 12_stdoutptr,)
-17: borrow_end(7_val)
-18: borrow_end(8_len)
-19: borrow_end(13_anonymous)
-20: borrow_end(12_stdoutptr)
-21: return
+5: move(10_anonymous)
+6: receiver_Ssaid(11) = @2( 9_anonymous, 10_anonymous,)
+7: 12_stdoutptr = 11_fdopen_result
+8: move(11_fdopen_result)
+9: move(7_val)
+10: move(8_len)
+11: 13_anonymous := Int(1)
+12: move(13_anonymous)
+13: move(12_stdoutptr)
+14: receiver_Ssaid(14) = @4( 7_val, 8_len, 13_anonymous, 12_stdoutptr,)
+15: 15_res = 14_fwrite_result
+16: move(14_fwrite_result)
+17: 16_anonymous := Int(1)
+18: move(16_anonymous)
+19: 17_anonymous := "w"
+20: move(17_anonymous)
+21: receiver_Ssaid(18) = @2( 16_anonymous, 17_anonymous,)
+22: 19_stdoutptrb = 18_fdopen_result
+23: move(18_fdopen_result)
+24: move(19_stdoutptrb)
+25: receiver_Ssaid(20) = @6( 19_stdoutptrb,)
+26: 21_resb = 20_fflush_result
+27: move(20_fflush_result)
+28: return
 
-fn 44:
-block_15
-0: 16_anonymous := "test"
-1: 17_val = 16_anonymous
-2: move(16_anonymous)
-3: 18_anonymous := Int(0)
-4: 19_i = 18_anonymous
-5: move(18_anonymous)
-6: 22_anonymous := "hello\n"
-7: 23_anonymous := "world\n"
-8: move(22_anonymous)
-9: move(23_anonymous)
-10: array_init_result_Ssaid(21) = InitArray[ 22_anonymous, 23_anonymous,]
-11: 24_values = 21_@array_init_result
-12: move(21_@array_init_result)
-13: While block_BlockId(25)  { block_BlockId(28) }
+fn 54:
+block_22
+0: 23_anonymous := "test"
+1: 24_val = 23_anonymous
+2: move(23_anonymous)
+3: 25_anonymous := Int(0)
+4: 26_i = 25_anonymous
+5: move(25_anonymous)
+6: 29_anonymous := "hello\n"
+7: 30_anonymous := "world\n"
+8: move(29_anonymous)
+9: move(30_anonymous)
+10: array_init_result_Ssaid(28) = InitArray[ 29_anonymous, 30_anonymous,]
+11: 31_values = 28_@array_init_result
+12: move(28_@array_init_result)
+13: While block_BlockId(32)  { block_BlockId(35) }
 
-block_25
-0: 26_anonymous := Int(2)
-1: 27_@less_than_result = 19_i < 26_anonymous
-2: move(19_i)
-3: move(26_anonymous)
+block_32
+0: 33_anonymous := Int(2)
+1: 34_@less_than_result = 26_i < 33_anonymous
+2: move(26_i)
+3: move(33_anonymous)
 
-block_28
-0: borrow(17_val)
-1: @47( 17_val,)
-2: borrow_end(17_val)
-3: move(19_i)
-4: move(24_values)
-5: array_lookup_result_Ssaid(29) = ArrayLookup( 24_values, 19_i, 29_@array_lookup_result,)
-6: borrow(29_@array_lookup_result)
-7: 30_anonymous := Int(6)
-8: borrow(30_anonymous)
-9: @17( 29_@array_lookup_result, 30_anonymous,)
-10: borrow_end(29_@array_lookup_result)
-11: borrow_end(30_anonymous)
-12: 31_anonymous := Int(1)
-13: 32_@addition_result = 19_i + 31_anonymous
-14: move(19_i)
-15: move(31_anonymous)
-16: 19_i = 32_@addition_result
-17: move(32_@addition_result)
+block_35
+0: 36_anon = Project<24_val>
+1: move(36_anon)
+2: @57( 36_anon,)
+3: move(26_i)
+4: move(31_values)
+5: array_lookup_result_Ssaid(37) = ArrayLookup( 31_values, 26_i, 37_@array_lookup_result,)
+6: move(37_@array_lookup_result)
+7: 38_anonymous := Int(6)
+8: move(38_anonymous)
+9: @27( 37_@array_lookup_result, 38_anonymous,)
+10: 39_anonymous := Int(1)
+11: 40_@addition_result = 26_i + 39_anonymous
+12: move(26_i)
+13: move(39_anonymous)
+14: 26_i = 40_@addition_result
+15: move(40_@addition_result)
 
-block_33
+block_41
 0: return
 
-fn 47:
-block_34
-0: 35_v = fnarg
-1: return
+fn 57:
+block_42
+0: 43_v = fnarg
+1: 43_v = Project<43_v>
+2: return

@@ -1,7 +1,5 @@
-use super::{
-    identifiers::{DeclarationID, FunctionDeclarationID, StructDeclarationID},
-    nodes::Identifier,
-};
+use super::identifiers::{DeclarationID, FunctionDeclarationID, StructDeclarationID};
+use super::nodes::Identifier;
 
 #[derive(Default, Clone, Debug)]
 pub struct ModuleDeclaration {

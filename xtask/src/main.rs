@@ -40,8 +40,10 @@ fn run_code_checks() -> Result<()> {
     println!("Running code quality checks!");
 
     println!("Running rustfmt");
+
+    // We use some features in the formatter which require nightly.
     process::Command::new("cargo")
-        .args(["fmt", "--all", "--check"])
+        .args(["+nightly", "fmt", "--all", "--check"])
         .spawn()?
         .wait()?;
 
@@ -64,8 +66,10 @@ fn run_code_checks_and_apply_fixes() -> Result<()> {
     println!("Applying code quality fixes!");
 
     println!("Running rustfmt");
+
+    // We use some features in the formatter which require nightly.
     process::Command::new("cargo")
-        .args(["fmt", "--all"])
+        .args(["+nightly", "fmt", "--all"])
         .spawn()?
         .wait()?;
 

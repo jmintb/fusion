@@ -1,16 +1,12 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use anyhow::Result;
-
 use tracing::debug;
 
-use crate::{
-    ast::identifiers::FunctionDeclarationID,
-    control_flow_graph::ControlFlowGraph,
-    ir::{BlockId, Instruction, IrProgram, Ssaid},
-};
-
 use super::ir_transformer::IrInterpreter;
+use crate::ast::identifiers::FunctionDeclarationID;
+use crate::control_flow_graph::ControlFlowGraph;
+use crate::ir::{BlockId, Instruction, IrProgram, Ssaid};
 
 #[derive(Clone, Debug, Copy)]
 pub struct AbstractAddress {
@@ -202,11 +198,12 @@ pub fn calculate_livenss(
 #[cfg(test)]
 mod test {
 
-    use super::*;
+    use std::path::PathBuf;
 
     use anyhow::Result;
     use rstest::rstest;
-    use std::path::PathBuf;
+
+    use super::*;
 
     #[rstest]
     #[test_log::test]

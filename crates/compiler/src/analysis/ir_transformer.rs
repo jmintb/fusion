@@ -1,10 +1,10 @@
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
-use crate::ir::{Block, IrProgram, Ssaid, Variable};
-
-use crate::{control_flow_graph::ControlFlowGraph, ir::BlockId};
 use anyhow::Result;
 use tracing::debug;
+
+use crate::control_flow_graph::ControlFlowGraph;
+use crate::ir::{Block, BlockId, IrProgram, Ssaid, Variable};
 
 #[derive(Clone, Debug)]
 pub struct IrScope {

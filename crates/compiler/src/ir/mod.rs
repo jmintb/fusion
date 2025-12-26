@@ -1,26 +1,43 @@
-use std::{
-    collections::{BTreeMap, HashMap},
-    fmt::Display,
-};
+pub mod intrinsics;
+
+use std::collections::{BTreeMap, HashMap};
+use std::fmt::Display;
 
 use tracing::debug;
 
-use crate::analysis::type_evaluation::TypeName;
-use crate::ast::nodes::Type;
-use crate::types::FlatEntityStore;
-use crate::{
-    ast::{
-        identifiers::{BlockID, ExpressionID, FunctionDeclarationID, StatementID},
-        nodes::{
-            AccessModes, Array, ArrayLookup, Assign, Assignment, Call, Expression, FunctionArg,
-            Identifier, IfElseStatement, IfStatement, Operation, Operator, Return, StructFieldPath,
-            StructInit, Value, While, Yield,
-        },
-        Ast, NodeDatabase,
-    },
-    control_flow_graph::ControlFlowGraph,
-    types::TypeDB,
+use self::intrinsics::{
+    ResultfullIntrinsic,
+    ResultfullIntrinsicCall,
+    ResultlessIntrinsic,
+    ResultlessIntrinsicCall,
 };
+use crate::analysis::type_evaluation::TypeName;
+use crate::ast::identifiers::{BlockID, ExpressionID, FunctionDeclarationID, StatementID};
+use crate::ast::nodes::{
+    AccessModes,
+    Array,
+    ArrayLookup,
+    Assign,
+    Assignment,
+    Call,
+    Expression,
+    FunctionArg,
+    Identifier,
+    IfElseStatement,
+    IfStatement,
+    Operation,
+    Operator,
+    Return,
+    StructFieldPath,
+    StructInit,
+    Type,
+    Value,
+    While,
+    Yield,
+};
+use crate::ast::{Ast, NodeDatabase};
+use crate::control_flow_graph::ControlFlowGraph;
+use crate::types::FlatEntityStore;
 
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Copy, Hash, Default)]
 pub struct Ssaid(pub usize);
@@ -32,7 +49,7 @@ impl From<usize> for Ssaid {
 
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Copy, Hash)]
 pub struct BlockId(pub usize);
-#[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Copy)]
 pub struct FunctionId(pub FunctionDeclarationID);
 
 impl Display for FunctionId {
@@ -65,6 +82,7 @@ pub struct IrProgram {
     pub struct_field_identifier: Vec<Identifier>,
     pub type_names: FlatEntityStore<TypeName, usize>,
     pub projections: BTreeMap<Ssaid, Vec<Ssaid>>,
+    pub function_arguments: BTreeMap<FunctionDeclarationID, Vec<Ssaid>>,
 }
 
 impl IrProgram {
@@ -157,6 +175,15 @@ pub enum Instruction {
         result: Ssaid,
     },
     Assign(Ssaid, Ssaid),
+    StructAssign {
+        r#struct: Ssaid,
+        field_name_index: usize,
+        reciever: Ssaid,
+    },
+    Project {
+        reciever: Ssaid,
+        projector: Ssaid,
+    },
     Move(Ssaid),
     Borrow(Ssaid),
     BorrowEnd(Ssaid),
@@ -167,6 +194,8 @@ pub enum Instruction {
     ResultlessCall(FunctionId, Vec<Ssaid>),
     YieldingCall(FunctionId, Vec<Ssaid>, Ssaid, usize),
     AssignFnArg(Ssaid, usize, usize),
+    CallIntrinsic(ResultfullIntrinsicCall),
+    CallResultlessIntrinsic(ResultlessIntrinsicCall),
     Return(Option<Ssaid>),
     Yield(Ssaid),
     IfElse(Ssaid, BlockId, BlockId),
@@ -229,6 +258,18 @@ impl Instruction {
             Self::DeclareBooleanType { .. } => "".to_string(),
             Self::DeclarePointerType { .. } => "".to_string(),
             Self::DeclareStringType { .. } => "".to_string(),
+            Self::Project {
+                reciever,
+                projector: projectee,
+            } => {
+                format!(
+                    "{}_{} = Project<{}_{}>",
+                    reciever.0,
+                    ssa_variables.get(reciever).unwrap().original_variable.0,
+                    projectee.0,
+                    ssa_variables.get(projectee).unwrap().original_variable.0
+                )
+            }
             Self::WhileLoop {
                 condition, body, ..
             } => {
@@ -244,11 +285,13 @@ impl Instruction {
                     result,
                     [array, index, result]
                         .iter()
-                        .map(|variable_id| format!(
-                            "{}_{},",
-                            variable_id.0,
-                            ssa_variables.get(variable_id).unwrap().original_variable.0
-                        ))
+                        .map(|variable_id| {
+                            format!(
+                                "{}_{},",
+                                variable_id.0,
+                                ssa_variables.get(variable_id).unwrap().original_variable.0
+                            )
+                        })
                         .fold(String::new(), |acc, next| format!("{} {}", acc, next))
                 )
             }
@@ -287,11 +330,13 @@ impl Instruction {
                     struct_identifier,
                     field_values
                         .iter()
-                        .map(|variable_id| format!(
-                            "{}_{},",
-                            variable_id.0,
-                            ssa_variables.get(variable_id).unwrap().original_variable.0
-                        ))
+                        .map(|variable_id| {
+                            format!(
+                                "{}_{},",
+                                variable_id.0,
+                                ssa_variables.get(variable_id).unwrap().original_variable.0
+                            )
+                        })
                         .fold(String::new(), |acc, next| format!("{} {}", acc, next))
                 )
             }
@@ -301,11 +346,13 @@ impl Instruction {
                     result,
                     items
                         .iter()
-                        .map(|variable_id| format!(
-                            "{}_{},",
-                            variable_id.0,
-                            ssa_variables.get(variable_id).unwrap().original_variable.0
-                        ))
+                        .map(|variable_id| {
+                            format!(
+                                "{}_{},",
+                                variable_id.0,
+                                ssa_variables.get(variable_id).unwrap().original_variable.0
+                            )
+                        })
                         .fold(String::new(), |acc, next| format!("{} {}", acc, next))
                 )
             }
@@ -370,6 +417,17 @@ impl Instruction {
                     ssa_variables.get(lhs).unwrap().original_variable.0,
                     rhs.0,
                     ssa_variables.get(rhs).unwrap().original_variable.0
+                )
+            }
+            Self::StructAssign {
+                r#struct, reciever, ..
+            } => {
+                format!(
+                    "{}_{}.some_field = {}_{}",
+                    r#struct.0,
+                    ssa_variables.get(r#struct).unwrap().original_variable.0,
+                    reciever.0,
+                    ssa_variables.get(reciever).unwrap().original_variable.0
                 )
             }
             Self::Assign(to, from) => {
@@ -444,11 +502,35 @@ impl Instruction {
                     result_id,
                     function_id.0 .0,
                     args.iter()
-                        .map(|variable_id| format!(
-                            "{}_{},",
-                            variable_id.0,
-                            ssa_variables.get(variable_id).unwrap().original_variable.0
-                        ))
+                        .map(|variable_id| {
+                            format!(
+                                "{}_{},",
+                                variable_id.0,
+                                ssa_variables.get(variable_id).unwrap().original_variable.0
+                            )
+                        })
+                        .fold(String::new(), |acc, next| format!("{} {}", acc, next))
+                )
+            }
+            Self::CallIntrinsic(ResultfullIntrinsicCall {
+                intrinsic,
+                arguments,
+                result_receiver: result_reciever,
+                ..
+            }) => {
+                format!(
+                    "receiver_{:?} = resultfull_intrinsic {}({})",
+                    result_reciever,
+                    intrinsic,
+                    arguments
+                        .iter()
+                        .map(|variable_id| {
+                            format!(
+                                "{}_{},",
+                                variable_id.0,
+                                ssa_variables.get(variable_id).unwrap().original_variable.0
+                            )
+                        })
                         .fold(String::new(), |acc, next| format!("{} {}", acc, next))
                 )
             }
@@ -458,11 +540,13 @@ impl Instruction {
                     result_id,
                     function_id.0 .0,
                     args.iter()
-                        .map(|variable_id| format!(
-                            "{}_{},",
-                            variable_id.0,
-                            ssa_variables.get(variable_id).unwrap().original_variable.0
-                        ))
+                        .map(|variable_id| {
+                            format!(
+                                "{}_{},",
+                                variable_id.0,
+                                ssa_variables.get(variable_id).unwrap().original_variable.0
+                            )
+                        })
                         .fold(String::new(), |acc, next| format!("{} {}", acc, next))
                 )
             }
@@ -471,11 +555,32 @@ impl Instruction {
                     "@{}({})",
                     function_id.0 .0,
                     args.iter()
-                        .map(|variable_id| format!(
-                            "{}_{},",
-                            variable_id.0,
-                            ssa_variables.get(variable_id).unwrap().original_variable.0
-                        ))
+                        .map(|variable_id| {
+                            format!(
+                                "{}_{},",
+                                variable_id.0,
+                                ssa_variables.get(variable_id).unwrap().original_variable.0
+                            )
+                        })
+                        .fold(String::new(), |acc, next| format!("{} {}", acc, next))
+                )
+            }
+            Self::CallResultlessIntrinsic(ResultlessIntrinsicCall {
+                intrinsic,
+                arguments,
+            }) => {
+                format!(
+                    "resutless_intrinsic {}({})",
+                    intrinsic,
+                    arguments
+                        .iter()
+                        .map(|variable_id| {
+                            format!(
+                                "{}_{},",
+                                variable_id.0,
+                                ssa_variables.get(variable_id).unwrap().original_variable.0
+                            )
+                        })
                         .fold(String::new(), |acc, next| format!("{} {}", acc, next))
                 )
             }
@@ -504,7 +609,6 @@ pub struct IrGenerator {
     control_flow_graphs: BTreeMap<FunctionDeclarationID, ControlFlowGraph<BlockId>>,
     current_function: FunctionDeclarationID,
     node_db: NodeDatabase,
-    type_db: TypeDB,
     entry_point_function: FunctionDeclarationID,
     static_values: HashMap<Ssaid, Value>,
     external_function_declaraitons: Vec<FunctionDeclarationID>,
@@ -514,6 +618,7 @@ pub struct IrGenerator {
     struct_field_identifier: Vec<Identifier>,
     type_names: FlatEntityStore<TypeName, usize>,
     projections: BTreeMap<Ssaid, Vec<Ssaid>>,
+    function_arguments: BTreeMap<FunctionDeclarationID, Vec<Ssaid>>,
 }
 
 use crate::types;
@@ -523,7 +628,6 @@ impl IrGenerator {
         ast: Ast,
         node_db: NodeDatabase,
         expression_types: HashMap<ExpressionID, types::Type>,
-        type_db: TypeDB,
     ) -> Self {
         let entry_block = Block {
             instructions: Vec::new(),
@@ -544,7 +648,6 @@ impl IrGenerator {
             control_flow_graphs: BTreeMap::new(),
             current_function: ast.get_entry_function_id(&node_db).unwrap(),
             entry_point_function: ast.get_entry_function_id(&node_db).unwrap(),
-            type_db,
             node_db,
             static_values: HashMap::new(),
             external_function_declaraitons: Vec::new(),
@@ -555,6 +658,7 @@ impl IrGenerator {
             struct_field_identifier: Vec::new(),
             type_names: FlatEntityStore::new(),
             projections: BTreeMap::new(),
+            function_arguments: BTreeMap::new(),
         }
     }
 
@@ -578,6 +682,19 @@ impl IrGenerator {
         let new_id = self.id_count;
         self.id_count += 1;
         Ssaid(new_id)
+    }
+
+    fn add_anon_ssa_variable(&mut self) -> Ssaid {
+        let id = self.new_ssa_id();
+        let ssa_var = Variable {
+            original_variable: Identifier::new("anon".to_string()),
+            id,
+        };
+
+        self.store_current_fn_variable(id, ssa_var);
+        debug!("add anon ssa variable for identifier: {:?}", id);
+
+        id
     }
 
     fn add_ssa_variable(&mut self, original_variable_id: Identifier) -> Ssaid {
@@ -802,6 +919,7 @@ impl IrGenerator {
             top_level_block,
             type_names: self.type_names,
             projections: self.projections,
+            function_arguments: self.function_arguments,
         }
     }
 
@@ -860,12 +978,42 @@ impl IrGenerator {
             );
         };
 
+        if assignment.id.0.contains(".") {
+            return self.convert_struct_field_assign(assignment, current_block, result_id);
+        }
+
         // TODO: this breaks SSA, we probably have to pass the latest values to each loop iteration.
-        let ssa_id = self.latest_gen_variable(assignment.id).unwrap();
+        let ssa_id = self
+            .latest_gen_variable(assignment.id.clone())
+            .unwrap_or_else(|| panic!("expected assignment to variable {:?}", assignment.id));
         let assign_instruction = Instruction::Assign(ssa_id, result_id);
         self.add_instruction(updated_block_id, assign_instruction);
         self.add_instruction(updated_block_id, self.get_access_instruction(result_id));
         updated_block_id
+    }
+
+    fn convert_struct_field_assign(
+        &mut self,
+        assignment: Assign,
+        current_block: BlockId,
+        result_id: Ssaid,
+    ) -> BlockId {
+        let sub_strings: Vec<_> = assignment.id.0.split(".").collect();
+        let (struct_name, field_name) = (sub_strings[0], sub_strings[1]);
+
+        let ssa_id = self
+            .latest_gen_variable(Identifier::new(struct_name.to_string()))
+            .unwrap_or_else(|| panic!("expected assignment to variable {:?}", assignment.id));
+        let field_index =
+            self.add_new_struct_field_identifier(Identifier::new(field_name.to_string()));
+        let assign_instruction = Instruction::StructAssign {
+            r#struct: ssa_id,
+            field_name_index: field_index,
+            reciever: result_id,
+        };
+        self.add_instruction(current_block, assign_instruction);
+        self.add_instruction(current_block, self.get_access_instruction(result_id));
+        current_block
     }
 
     fn convert_existing_ir_block(
@@ -948,6 +1096,41 @@ impl IrGenerator {
         }
     }
 
+    fn project_value(&mut self, ssaid: &Ssaid, current_block: BlockId) -> Ssaid {
+        let projectee = self.add_anon_ssa_variable();
+        let instruction = Instruction::Project {
+            projector: *ssaid,
+            reciever: projectee,
+        };
+        self.add_instruction(current_block, instruction);
+
+        projectee
+    }
+
+    fn mark_value_as_projected(&mut self, ssaid: &Ssaid, current_block: BlockId) {
+        let instruction = Instruction::Project {
+            projector: *ssaid,
+            reciever: *ssaid,
+        };
+        self.add_instruction(current_block, instruction);
+    }
+
+    fn insert_projection_mark_if_needed(&mut self, ssaid: &Ssaid, current_block: BlockId) {
+        match self.access_modes[ssaid] {
+            AccessModes::Let | AccessModes::Inout => {
+                self.mark_value_as_projected(ssaid, current_block)
+            }
+            _ => (),
+        };
+    }
+
+    fn insert_projection_if_needed(&mut self, ssaid: &Ssaid, current_block: BlockId) -> Ssaid {
+        match self.access_modes[ssaid] {
+            AccessModes::Let | AccessModes::Inout => self.project_value(ssaid, current_block),
+            _ => *ssaid,
+        }
+    }
+
     fn convert_expression(
         &mut self,
         expression_id: ExpressionID,
@@ -977,17 +1160,6 @@ impl IrGenerator {
                     .get_function_declaration_id_from_identifier(function_id.clone())
                     .unwrap();
 
-                let function_type_id = *self
-                    .type_db
-                    .function_declaration_types
-                    .get(function_declaration_id)
-                    .unwrap_or_else(|| {
-                        panic!(
-                            "expected find type for function in {:?} {:?}",
-                            function_declaration_id, self.type_db.function_declaration_types
-                        )
-                    });
-
                 let function_declaration = self
                     .node_db
                     .function_declarations
@@ -995,12 +1167,9 @@ impl IrGenerator {
                     .unwrap()
                     .clone();
 
-                let function_return_type = self
-                    .type_db
-                    .function_types
-                    .get(&function_type_id)
-                    .unwrap()
-                    .return_type;
+                let is_intrinsic = function_declaration
+                    .keywords
+                    .contains(&crate::ast::nodes::FunctionKeyword::Intrinsic);
 
                 let argument_types = function_declaration.arguments.clone();
 
@@ -1015,6 +1184,15 @@ impl IrGenerator {
                     if let Some(ssa_var) = ssa_var {
                         self.access_modes
                             .insert(ssa_var, argument_types[i].access_mode);
+
+                        let ssa_var = if !function_id.0.contains("mem_write")
+                            && !function_id.0.contains("mem_offset")
+                        {
+                            self.insert_projection_if_needed(&ssa_var, current_block)
+                        } else {
+                            ssa_var
+                        };
+
                         let access_instruction = self.get_access_instruction(ssa_var);
                         setup_instructions.push(access_instruction.clone());
                         self.add_instruction(current_block, access_instruction);
@@ -1059,23 +1237,48 @@ impl IrGenerator {
                 }
 
                 // TODO: we should not be interacting with types at this stage.
-                let result = match function_return_type {
-                    types::Type::Unit => {
+                let result = match function_declaration.return_type {
+                    None => {
                         if function_declaration.is_yielding() {
                             panic!("A yielding function must return a value");
                         }
 
-                        self.add_instruction(
-                            current_block,
-                            Instruction::ResultlessCall(
-                                FunctionId(
-                                    self.node_db
-                                        .get_function_declaration_id_from_identifier(function_id)
-                                        .unwrap(),
+                        if !is_intrinsic {
+                            self.add_instruction(
+                                current_block,
+                                Instruction::ResultlessCall(
+                                    FunctionId(
+                                        self.node_db
+                                            .get_function_declaration_id_from_identifier(
+                                                function_id,
+                                            )
+                                            .unwrap(),
+                                    ),
+                                    function_args,
                                 ),
-                                function_args,
-                            ),
-                        );
+                            )
+                        } else {
+                            let maybe_intrinsic =
+                                ResultlessIntrinsic::try_from(function_id.0.as_str());
+
+                            match maybe_intrinsic {
+                                Ok(ResultlessIntrinsic::Write) => self.add_instruction(
+                                    current_block,
+                                    Instruction::CallResultlessIntrinsic(ResultlessIntrinsicCall {
+                                        intrinsic: ResultlessIntrinsic::Write,
+                                        arguments: function_args,
+                                    }),
+                                ),
+                                _ => {
+                                    // Note: this ensures that the compiler will complain when
+                                    // new ResutlessIntrinsics  variants implemented. While still
+                                    // unwrapping and panicing if now valid variant is found.
+                                    // TODO: replace this unwrap when implement fault tolerance.
+                                    maybe_intrinsic.unwrap();
+                                }
+                            };
+                        };
+
                         None
                     }
                     _ => {
@@ -1085,7 +1288,29 @@ impl IrGenerator {
                         let function_call_result_reciever = self
                             .add_ssa_variable(Identifier::new(format!("{}_result", function_id.0)));
 
-                        let instruction = if function_declaration.is_yielding() {
+                        let instruction = if is_intrinsic {
+                            let maybe_intrinsic =
+                                ResultfullIntrinsic::try_from(function_id.0.as_str());
+
+                            match maybe_intrinsic {
+                                Ok(ResultfullIntrinsic::Offset) => {
+                                    Instruction::CallIntrinsic(ResultfullIntrinsicCall {
+                                        intrinsic: ResultfullIntrinsic::Offset,
+                                        arguments: function_args,
+                                        result_receiver: function_call_result_reciever,
+                                        return_type_name_id,
+                                    })
+                                }
+                                _ => {
+                                    // Note: this ensures that the compiler will complain when
+                                    // new ResutlessIntrinsics  variants implemented. While still
+                                    // unwrapping and panicing if now valid variant is found.
+                                    // TODO: replace this unwrap when implement fault tolerance.
+                                    maybe_intrinsic.unwrap();
+                                    panic!() // TODO: panic is here to address incompatible types.
+                                }
+                            }
+                        } else if function_declaration.is_yielding() {
                             // TODO: this control flow is horrible
                             self.track_projection(
                                 function_call_result_reciever,
@@ -1114,9 +1339,10 @@ impl IrGenerator {
                                 return_type_name_id,
                             )
                         };
+
                         self.add_instruction(current_block, instruction);
 
-                        self.set_ssaid_type(function_call_result_reciever, function_return_type);
+                        // self.set_ssaid_type(function_call_result_reciever, function_return_type);
 
                         Some(function_call_result_reciever)
                     }
@@ -1131,7 +1357,9 @@ impl IrGenerator {
 
             Expression::Value(val) => match val {
                 Value::Variable(id) => {
-                    let ssa_var = self.latest_gen_variable(id.clone()).unwrap();
+                    let ssa_var = self
+                        .latest_gen_variable(id.clone())
+                        .unwrap_or_else(|| panic!("expected variable with name: {:?}", id));
                     return (current_block, Some(ssa_var));
                 }
                 _ => {
@@ -1447,18 +1675,19 @@ impl IrGenerator {
         (current_block, None)
     }
 
+    fn store_function_argument_reciever(&mut self, ssaid: Ssaid) {
+        self.function_arguments
+            .entry(self.current_function)
+            .and_modify(|arguments| arguments.push(ssaid))
+            .or_insert(vec![ssaid]);
+    }
+
     fn declare_function_argument(
         &mut self,
         argument: FunctionArg,
         position: usize,
         current_block: BlockId,
     ) {
-        let argument_type = match argument.r#type {
-            Some(Type::StringLiteral) => types::Type::String,
-            Some(Type::SignedInteger) => types::Type::Integer(types::SignedIntegerType(32)),
-            _ => todo!("argument typing not implemented for: {:?}", argument),
-        };
-
         let argument_type_name_id = if let Some(argument_type_name) = argument.r#type {
             self.type_names.insert(argument_type_name)
         } else {
@@ -1469,7 +1698,8 @@ impl IrGenerator {
         let assign_instruction = Instruction::AssignFnArg(ssa_id, position, argument_type_name_id);
         self.access_modes.insert(ssa_id, argument.access_mode);
         self.add_instruction(current_block, assign_instruction);
-        self.set_ssaid_type(ssa_id, argument_type);
+        self.store_function_argument_reciever(ssa_id);
+        self.insert_projection_mark_if_needed(&ssa_id, current_block);
     }
 
     fn add_instruction(&mut self, updated_block_id: BlockId, assign_instruction: Instruction) {
@@ -1501,10 +1731,12 @@ impl IrGenerator {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use std::path::PathBuf;
+
     use anyhow::Result;
     use rstest::rstest;
-    use std::path::PathBuf;
+
+    use super::*;
 
     // NEXT actual: aligns types added outside of this file
 
