@@ -13,7 +13,8 @@ use melior::{
     dialect::{
         arith,
         func::{self},
-        llvm::{self, attributes::Linkage}, scf, DialectRegistry,
+        llvm::{self, attributes::Linkage},
+        scf, DialectRegistry,
     },
     ir::{
         attribute::{FlatSymbolRefAttribute, IntegerAttribute, StringAttribute, TypeAttribute},
@@ -21,7 +22,7 @@ use melior::{
         operation::OperationLike,
         r#type::{FunctionType, IntegerType, MemRefType},
         Attribute, Block, BlockLike, BlockRef, Identifier, Location, Module, Operation,
-        OperationRef, Region, RegionLike, Type, Value, ValueLike,
+        OperationRef, Region, RegionLike, Type, Value,
     },
     pass::{self},
     utility::{register_all_dialects, register_all_llvm_translations},
@@ -1386,37 +1387,6 @@ impl<'ctx> CodeGen<'ctx> {
                     bail!("failed to find struct {}", result_receiver.0);
                 };
 
-                let program_types = self.program_types.get(&self.current_fn_decl_id).unwrap();
-                let array_type = program_types.lookup_variable_type(*result_receiver)?;
-                let memref_type = as_mlir_type(array_type, self.context, program_types);
-
-                let ptr_type = melior::dialect::llvm::r#type::pointer(self.context, 0);
-
-                let constant_one: Value = current_block
-                    .append_operation(melior::dialect::arith::constant(
-                        self.context,
-                        IntegerAttribute::new(IntegerType::new(self.context, 64).into(), 1_i64)
-                            .into(),
-                        Location::unknown(self.context),
-                    ))
-                    .result(0)
-                    .unwrap()
-                    .into();
-                let array_ptr = melior::dialect::llvm::alloca(
-                    self.context,
-                    constant_one,
-                    ptr_type,
-                    Location::unknown(self.context),
-                    melior::dialect::llvm::AllocaOptions::new()
-                        .elem_type(Some(TypeAttribute::new(memref_type))),
-                );
-
-                let array_ptr_val: Value = current_block
-                    .append_operation(array_ptr)
-                    .result(0)
-                    .unwrap()
-                    .into();
-
                 for (index, item) in item_values.into_iter().enumerate() {
                     mlir_array_value = current_block
                         .append_operation(llvm::insert_value(
@@ -1584,15 +1554,6 @@ impl<'ctx> CodeGen<'ctx> {
                     }
                     _ => panic!(),
                 };
-
-                let casted_index = current_block
-                    .append_operation(melior::dialect::index::casts(
-                        index_ptr,
-                        melior::ir::Type::index(self.context),
-                        location,
-                    ))
-                    .result(0)
-                    .unwrap();
 
                 let ptr_type = melior::dialect::llvm::r#type::pointer(self.context, 0);
 
