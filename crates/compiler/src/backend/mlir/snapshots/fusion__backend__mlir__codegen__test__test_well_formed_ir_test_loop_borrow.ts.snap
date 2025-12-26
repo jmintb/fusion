@@ -82,38 +82,35 @@ module {
     %24 = llvm.load %8 : !llvm.ptr -> !llvm.ptr
     %25 = llvm.load %10 : !llvm.ptr -> !llvm.ptr
     %26 = llvm.load %7 : !llvm.ptr -> !llvm.array<2 x ptr>
-    %27 = llvm.mlir.constant(1 : i64) : i64
-    %28 = llvm.alloca %27 x !llvm.array<2 x ptr> : (i64) -> !llvm.ptr
-    %29 = llvm.insertvalue %24, %26[0] : !llvm.array<2 x ptr> 
-    %30 = llvm.insertvalue %25, %29[1] : !llvm.array<2 x ptr> 
-    llvm.store %30, %7 : !llvm.array<2 x ptr>, !llvm.ptr
-    %31 = llvm.load %7 : !llvm.ptr -> !llvm.array<2 x ptr>
-    llvm.store %31, %12 : !llvm.array<2 x ptr>, !llvm.ptr
+    %27 = llvm.insertvalue %24, %26[0] : !llvm.array<2 x ptr> 
+    %28 = llvm.insertvalue %25, %27[1] : !llvm.array<2 x ptr> 
+    llvm.store %28, %7 : !llvm.array<2 x ptr>, !llvm.ptr
+    %29 = llvm.load %7 : !llvm.ptr -> !llvm.array<2 x ptr>
+    llvm.store %29, %12 : !llvm.array<2 x ptr>, !llvm.ptr
     llvm.br ^bb1
   ^bb1:  // 2 preds: ^bb0, ^bb2
-    %32 = llvm.load %6 : !llvm.ptr -> i32
-    %33 = llvm.load %13 : !llvm.ptr -> i32
-    %34 = llvm.icmp "slt" %32, %33 : i32
-    llvm.store %34, %15 : i1, !llvm.ptr
-    %35 = llvm.load %15 : !llvm.ptr -> i1
-    llvm.cond_br %35, ^bb2, ^bb3
+    %30 = llvm.load %6 : !llvm.ptr -> i32
+    %31 = llvm.load %13 : !llvm.ptr -> i32
+    %32 = llvm.icmp "slt" %30, %31 : i32
+    llvm.store %32, %15 : i1, !llvm.ptr
+    %33 = llvm.load %15 : !llvm.ptr -> i1
+    llvm.cond_br %33, ^bb2, ^bb3
   ^bb2:  // pred: ^bb1
-    %36 = llvm.load %3 : !llvm.ptr -> !llvm.ptr
-    llvm.call @borrow_val(%36) : (!llvm.ptr) -> ()
-    %37 = llvm.load %6 : !llvm.ptr -> i32
-    %38 = llvm.sext %37 : i32 to i64
-    %39 = llvm.getelementptr %12[%37] : (!llvm.ptr, i32) -> !llvm.ptr, !llvm.ptr
-    %40 = llvm.load %39 : !llvm.ptr -> !llvm.ptr
-    llvm.store %40, %16 : !llvm.ptr, !llvm.ptr
-    %41 = llvm.load %16 : !llvm.ptr -> !llvm.ptr
-    %42 = llvm.load %17 : !llvm.ptr -> i32
-    llvm.call @print(%41, %42) : (!llvm.ptr, i32) -> ()
-    %43 = llvm.load %6 : !llvm.ptr -> i32
-    %44 = llvm.load %19 : !llvm.ptr -> i32
-    %45 = llvm.add %43, %44 : i32
-    llvm.store %45, %21 : i32, !llvm.ptr
-    %46 = llvm.load %21 : !llvm.ptr -> i32
-    llvm.store %46, %6 : i32, !llvm.ptr
+    %34 = llvm.load %3 : !llvm.ptr -> !llvm.ptr
+    llvm.call @borrow_val(%34) : (!llvm.ptr) -> ()
+    %35 = llvm.load %6 : !llvm.ptr -> i32
+    %36 = llvm.getelementptr %12[%35] : (!llvm.ptr, i32) -> !llvm.ptr, !llvm.ptr
+    %37 = llvm.load %36 : !llvm.ptr -> !llvm.ptr
+    llvm.store %37, %16 : !llvm.ptr, !llvm.ptr
+    %38 = llvm.load %16 : !llvm.ptr -> !llvm.ptr
+    %39 = llvm.load %17 : !llvm.ptr -> i32
+    llvm.call @print(%38, %39) : (!llvm.ptr, i32) -> ()
+    %40 = llvm.load %6 : !llvm.ptr -> i32
+    %41 = llvm.load %19 : !llvm.ptr -> i32
+    %42 = llvm.add %40, %41 : i32
+    llvm.store %42, %21 : i32, !llvm.ptr
+    %43 = llvm.load %21 : !llvm.ptr -> i32
+    llvm.store %43, %6 : i32, !llvm.ptr
     llvm.br ^bb1
   ^bb3:  // pred: ^bb1
     llvm.return
