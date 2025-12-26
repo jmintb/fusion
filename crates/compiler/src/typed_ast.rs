@@ -1,9 +1,20 @@
-use anyhow::{bail, Result};
-use melior::{dialect::llvm, ir::r#type::IntegerType, Context};
 use std::collections::{BTreeMap, HashMap};
 
+use anyhow::{bail, Result};
+use melior::dialect::llvm;
+use melior::ir::r#type::IntegerType;
+use melior::Context;
+
 use crate::parser::{
-    self, AccessModes, Ast, FunctionKeyword, Operator, TSExpression, TSIdentifier, TSType, TSValue,
+    self,
+    AccessModes,
+    Ast,
+    FunctionKeyword,
+    Operator,
+    TSExpression,
+    TSIdentifier,
+    TSType,
+    TSValue,
 };
 
 #[derive(Debug, Clone)]

@@ -1,7 +1,8 @@
+use std::path::PathBuf;
+
 use anyhow::Result;
 use assert_cmd::Command;
 use rstest::rstest;
-use std::path::PathBuf;
 
 #[rstest]
 fn test_well_formed_programs(#[files("./ir_test_programs/test_*.ts")] path: PathBuf) -> Result<()> {

@@ -3,61 +3,68 @@ source: crates/compiler/src/ir.rs
 expression: "format!(\"{}\", ir_progam)"
 ---
 IR:
-fn 17:
+fn 27:
 block_6
 0: 7_val = fnarg
 1: 8_len = fnarg
 2: 9_anonymous := Int(1)
-3: borrow(9_anonymous)
+3: move(9_anonymous)
 4: 10_anonymous := "w"
-5: borrow(10_anonymous)
-6: receiver_Ssaid(11) = @0( 9_anonymous, 10_anonymous,)
-7: borrow_end(9_anonymous)
-8: borrow_end(10_anonymous)
-9: 12_stdoutptr = 11_fdopen_result
-10: move(11_fdopen_result)
-11: borrow(7_val)
-12: borrow(8_len)
-13: 13_anonymous := Int(1)
-14: borrow(13_anonymous)
-15: borrow(12_stdoutptr)
-16: receiver_Ssaid(14) = @2( 7_val, 8_len, 13_anonymous, 12_stdoutptr,)
-17: borrow_end(7_val)
-18: borrow_end(8_len)
-19: borrow_end(13_anonymous)
-20: borrow_end(12_stdoutptr)
-21: return
+5: move(10_anonymous)
+6: receiver_Ssaid(11) = @2( 9_anonymous, 10_anonymous,)
+7: 12_stdoutptr = 11_fdopen_result
+8: move(11_fdopen_result)
+9: move(7_val)
+10: move(8_len)
+11: 13_anonymous := Int(1)
+12: move(13_anonymous)
+13: move(12_stdoutptr)
+14: receiver_Ssaid(14) = @4( 7_val, 8_len, 13_anonymous, 12_stdoutptr,)
+15: 15_res = 14_fwrite_result
+16: move(14_fwrite_result)
+17: 16_anonymous := Int(1)
+18: move(16_anonymous)
+19: 17_anonymous := "w"
+20: move(17_anonymous)
+21: receiver_Ssaid(18) = @2( 16_anonymous, 17_anonymous,)
+22: 19_stdoutptrb = 18_fdopen_result
+23: move(18_fdopen_result)
+24: move(19_stdoutptrb)
+25: receiver_Ssaid(20) = @6( 19_stdoutptrb,)
+26: 21_resb = 20_fflush_result
+27: move(20_fflush_result)
+28: return
 
-fn 36:
-block_15
-0: 16_anonymous := "test"
-1: 17_value = 16_anonymous
-2: move(16_anonymous)
-3: 18_anonymous := Int(0)
-4: 19_i = 18_anonymous
-5: move(18_anonymous)
-6: While block_BlockId(20)  { block_BlockId(23) }
+fn 46:
+block_22
+0: 23_anonymous := "test"
+1: 24_value = 23_anonymous
+2: move(23_anonymous)
+3: 25_anonymous := Int(0)
+4: 26_i = 25_anonymous
+5: move(25_anonymous)
+6: While block_BlockId(27)  { block_BlockId(30) }
 
-block_20
-0: 21_anonymous := Int(2)
-1: 22_@less_than_result = 19_i < 21_anonymous
-2: move(19_i)
-3: move(21_anonymous)
+block_27
+0: 28_anonymous := Int(2)
+1: 29_@less_than_result = 26_i < 28_anonymous
+2: move(26_i)
+3: move(28_anonymous)
 
-block_23
-0: move(17_value)
-1: @39( 17_value,)
-2: 24_anonymous := Int(1)
-3: 25_@addition_result = 19_i + 24_anonymous
-4: move(19_i)
-5: move(24_anonymous)
-6: 19_i = 25_@addition_result
-7: move(25_@addition_result)
+block_30
+0: move(24_value)
+1: @49( 24_value,)
+2: 31_anonymous := Int(1)
+3: 32_@addition_result = 26_i + 31_anonymous
+4: move(26_i)
+5: move(31_anonymous)
+6: 26_i = 32_@addition_result
+7: move(32_@addition_result)
 
-block_26
+block_33
 0: return
 
-fn 39:
-block_27
-0: 28_v = fnarg
+fn 49:
+block_34
+0: 35_v = fnarg
 1: return

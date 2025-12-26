@@ -1,19 +1,15 @@
-use super::ir_transformer::IrInterpreter;
-use super::ir_transformer::TransformContext;
+use std::collections::btree_map::BTreeMap;
+use std::collections::HashSet;
+
+use anyhow::{bail, Result};
+use tracing::debug;
+
+use super::ir_transformer::{IrInterpreter, TransformContext};
 use crate::ast::identifiers::FunctionDeclarationID;
 use crate::control_flow_graph::ControlFlowGraph;
-use crate::ir::BlockId;
-use crate::ir::Instruction;
-use crate::ir::IrProgram;
-use crate::ir::Ssaid;
-use crate::types::ArrayTypeID;
-use crate::types::FlatEntityStore;
-use crate::types::StructTypeID;
-use crate::types::Type;
-use anyhow::bail;
-use anyhow::Result;
-use std::collections::btree_map::BTreeMap;
-use tracing::debug;
+use crate::ir::intrinsics::ResultfullIntrinsicCall;
+use crate::ir::{BlockId, Instruction, IrProgram, Ssaid};
+use crate::types::{ArrayTypeID, FlatEntityStore, StructTypeID, Type};
 
 pub type TypeName = crate::ast::nodes::Type;
 
@@ -22,6 +18,7 @@ pub struct IrProgramTypes {
     pub array_types: FlatEntityStore<ArrayType, ArrayTypeID>,
     pub variable_types: BTreeMap<Ssaid, Ssaid>,
     pub struct_types: FlatEntityStore<StructType, StructTypeID>,
+    projected_types: HashSet<Ssaid>,
     pub comp_time_types: BTreeMap<Ssaid, Type>,
     pub type_name_ids: BTreeMap<TypeName, Ssaid>, // TODO: replace Type with a Type tag, reference or similar as this is not an actual type.
                                                   // it is the representation of the type annotation which hopefully has a matching type in scope.
@@ -39,6 +36,25 @@ impl IrProgramTypes {
         };
 
         Ok(r#type)
+    }
+
+    pub fn lookup_type_name_type(&self, type_name: &TypeName) -> Result<Type> {
+        if let TypeName::Unit = type_name {
+            return Ok(Type::Unit);
+        }
+
+        let Some(type_ssaid) = self.type_name_ids.get(type_name) else {
+            panic!("{:?}", type_name);
+        };
+        Ok(self.comp_time_types[type_ssaid])
+    }
+
+    pub fn is_projection(&self, ssaid: &Ssaid) -> bool {
+        self.projected_types.contains(ssaid)
+    }
+
+    pub fn set_variable_as_projected(&mut self, ssaid: &Ssaid) {
+        self.projected_types.insert(*ssaid);
     }
 
     pub fn calculate_struct_field_position(
@@ -70,6 +86,31 @@ impl IrProgramTypes {
             .unwrap();
 
         Ok(field_index)
+    }
+
+    pub fn calcuate_struct_field_type(
+        &self,
+        struct_ssaid: Ssaid,
+        field_name_index: usize,
+        ir_program: &IrProgram,
+    ) -> Result<Ssaid> {
+        let field_index =
+            self.calculate_struct_field_position(struct_ssaid, field_name_index, ir_program)?;
+
+        let Ok(Type::Struct(struct_type_id)) = self.lookup_variable_type(struct_ssaid) else {
+            bail!("failed to find struct type id when calcuating struct field positiojn");
+        };
+
+        let Some(actual_type) = self.struct_types.get(struct_type_id) else {
+            bail!("faile to find actual struct type when calcuating struct field position");
+        };
+
+        // TODO: field here is not the field index but a reference to the field identifer.
+        let Some(field_type_id) = actual_type.field_types.get(field_index) else {
+            bail!("failed to find field type id for struct field read");
+        };
+
+        Ok(*field_type_id)
     }
 }
 
@@ -142,6 +183,17 @@ fn check_types(
                 bail!("failed to find type ssaid for type name: {:#?}", type_name);
             };
             bc_ctx.variable_types.insert(*receiver, *type_ssaid);
+        }
+        Instruction::CallIntrinsic(ResultfullIntrinsicCall {
+            result_receiver,
+            return_type_name_id,
+            ..
+        }) => {
+            let type_name = ctx.ir_program.type_names.get(*return_type_name_id).unwrap();
+            let Some(type_ssaid) = bc_ctx.type_name_ids.get(type_name) else {
+                bail!("failed to find type ssaid for type name: {:#?}", type_name);
+            };
+            bc_ctx.variable_types.insert(*result_receiver, *type_ssaid);
         }
         Instruction::LessThan(lhs, rhs, receiver) => {
             let lhs_type_ssaid = bc_ctx.variable_types.get(lhs).unwrap();
@@ -281,7 +333,10 @@ fn check_types(
                 let field_value_type_ssaid = bc_ctx.variable_types.get(field_value).unwrap();
 
                 if expected_field_type_ssaid != field_value_type_ssaid {
-                    bail!("struct field value has wrong type");
+                    bail!(format!(
+                        "struct {:?} field value has wrong type",
+                        struct_type_name
+                    ));
                 }
             }
         }
@@ -290,26 +345,10 @@ fn check_types(
             field: field_id_index,
             receiver,
         } => {
-            let field_index = bc_ctx.calculate_struct_field_position(
-                *r#struct,
-                *field_id_index,
-                &ctx.ir_program,
-            )?;
+            let field_type_id =
+                bc_ctx.calcuate_struct_field_type(*r#struct, *field_id_index, &ctx.ir_program)?;
 
-            let Ok(Type::Struct(struct_type_id)) = bc_ctx.lookup_variable_type(*r#struct) else {
-                bail!("failed to find struct type id when calcuating struct field positiojn");
-            };
-
-            let Some(actual_type) = bc_ctx.struct_types.get(struct_type_id) else {
-                bail!("faile to find actual struct type when calcuating struct field position");
-            };
-
-            // TODO: field here is not the field index but a reference to the field identifer.
-            let Some(field_type_id) = actual_type.field_types.get(field_index) else {
-                bail!("failed to find field type id for struct field read");
-            };
-
-            bc_ctx.variable_types.insert(*receiver, *field_type_id);
+            bc_ctx.variable_types.insert(*receiver, field_type_id);
         }
         Instruction::InitArray(elements, receiver, type_ssaid) => {
             let first_element = elements[0];
@@ -330,6 +369,40 @@ fn check_types(
         Instruction::Assign(result, value) => {
             if let Some(r#type) = bc_ctx.variable_types.get(value) {
                 bc_ctx.variable_types.insert(*result, *r#type);
+                if bc_ctx.is_projection(value) {
+                    bc_ctx.set_variable_as_projected(result);
+                };
+            } else {
+                panic!()
+            }
+        }
+
+        Instruction::StructAssign {
+            r#struct: struct_id,
+            field_name_index,
+            reciever,
+        } => {
+            if let Ok(_field_type_id) =
+                bc_ctx.calcuate_struct_field_type(*struct_id, *field_name_index, &ctx.ir_program)
+            {
+                // TODO: type checking
+                if bc_ctx.is_projection(reciever) {
+                    panic!()
+                };
+            } else {
+                panic!()
+            }
+        }
+
+        Instruction::Project {
+            projector,
+            reciever,
+        } => {
+            if let Some(r#type) = bc_ctx.variable_types.get(projector) {
+                bc_ctx.variable_types.insert(*reciever, *r#type);
+                bc_ctx.set_variable_as_projected(reciever);
+            } else {
+                panic!()
             }
         }
 
@@ -360,10 +433,12 @@ fn check_types(
 #[cfg(test)]
 mod test {
 
-    use crate::compiler::produce_ir;
+    use std::path::PathBuf;
+
     use anyhow::Result;
     use rstest::rstest;
-    use std::path::PathBuf;
+
+    use crate::compiler::produce_ir;
 
     #[rstest]
     #[test_log::test]

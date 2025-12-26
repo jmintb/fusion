@@ -1,25 +1,44 @@
 use anyhow::{bail, Result};
-use pest::{
-    iterators::{Pair, Pairs},
-    Parser,
-};
+use pest::iterators::{Pair, Pairs};
+use pest::Parser;
 use pest_derive::Parser;
 
-use crate::ast::{
-    identifiers::DeclarationID,
-    nodes::{AccessModes, FunctionKeyword, Identifier},
+use super::declarations::ModuleDeclaration;
+use super::identifiers::{
+    BlockID,
+    ExpressionID,
+    FunctionDeclarationID,
+    StatementID,
+    StructDeclarationID,
 };
-
-use super::{
-    declarations::ModuleDeclaration,
-    identifiers::{BlockID, ExpressionID, FunctionDeclarationID, StatementID, StructDeclarationID},
-    nodes::{
-        Array, ArrayLookup, Assign, Assignment, Block, Call, Expression, FunctionArg,
-        FunctionDeclaration, IfElseStatement, IfStatement, Integer, Operation, Operator, Return,
-        StructDeclaration, StructField, StructFieldPath, StructInit, Type, Value, While, Yield,
-    },
-    Ast, NodeDatabase,
+use super::nodes::{
+    Array,
+    ArrayLookup,
+    Assign,
+    Assignment,
+    Block,
+    Call,
+    Expression,
+    FunctionArg,
+    FunctionDeclaration,
+    IfElseStatement,
+    IfStatement,
+    Integer,
+    Operation,
+    Operator,
+    Return,
+    StructDeclaration,
+    StructField,
+    StructFieldPath,
+    StructInit,
+    Type,
+    Value,
+    While,
+    Yield,
 };
+use super::{Ast, NodeDatabase};
+use crate::ast::identifiers::DeclarationID;
+use crate::ast::nodes::{AccessModes, FunctionKeyword, Identifier};
 
 #[derive(Parser)]
 #[grammar = "typed_script.pest"]
@@ -371,7 +390,10 @@ fn parse_operation(builder: &mut AstBuilder, pair: Pair<Rule>) -> Result<Operati
 
     let first_operand = parse_expression(builder, inner.next().unwrap())?;
 
-    let operator = parse_operator(inner.next().unwrap())?;
+    let Some(next_inner) = inner.next() else {
+        panic!("{:?}", builder.db.expressions[&first_operand])
+    };
+    let operator = parse_operator(next_inner)?;
 
     let second_operand = parse_expression(builder, inner.next().unwrap())?;
 
@@ -577,11 +599,13 @@ fn parse_type(ty: Pair<Rule>) -> Result<Type> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use std::path::PathBuf;
+
     use anyhow::Result;
     use rstest::rstest;
-    use std::path::PathBuf;
     use tracing::debug;
+
+    use super::*;
 
     #[rstest]
     #[test_log::test]

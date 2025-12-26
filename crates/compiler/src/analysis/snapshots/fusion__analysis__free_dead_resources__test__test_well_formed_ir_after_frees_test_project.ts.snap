@@ -3,65 +3,59 @@ source: crates/compiler/src/analysis/free_dead_resources.rs
 expression: "format!(\"{}\", ir_program)"
 ---
 IR:
-fn 17:
+fn 29:
 block_6
 0: 7_val = fnarg
 1: 8_len = fnarg
 2: 9_anonymous := Int(1)
-3: borrow(9_anonymous)
+3: move(9_anonymous)
 4: 10_anonymous := "w"
-5: borrow(10_anonymous)
-6: receiver_Ssaid(11) = @0( 9_anonymous, 10_anonymous,)
-7: borrow_end(9_anonymous)
-8: borrow_end(10_anonymous)
-9: 12_stdoutptr = 11_fdopen_result
-10: drop(9_anonymous)
-11: move(11_fdopen_result)
-12: drop(10_anonymous)
-13: borrow(7_val)
-14: borrow(8_len)
-15: 13_anonymous := Int(1)
-16: borrow(13_anonymous)
-17: borrow(12_stdoutptr)
-18: receiver_Ssaid(14) = @2( 7_val, 8_len, 13_anonymous, 12_stdoutptr,)
-19: borrow_end(7_val)
-20: drop(7_val)
-21: borrow_end(8_len)
-22: drop(8_len)
-23: drop(14_fwrite_result)
-24: borrow_end(13_anonymous)
-25: borrow_end(12_stdoutptr)
-26: drop(13_anonymous)
-27: drop(12_stdoutptr)
-28: return
+5: move(10_anonymous)
+6: receiver_Ssaid(11) = @4( 9_anonymous, 10_anonymous,)
+7: 12_stdoutptr = 11_fdopen_result
+8: move(11_fdopen_result)
+9: move(7_val)
+10: move(8_len)
+11: 13_anonymous := Int(1)
+12: move(13_anonymous)
+13: move(12_stdoutptr)
+14: receiver_Ssaid(14) = @6( 7_val, 8_len, 13_anonymous, 12_stdoutptr,)
+15: 15_res = 14_fwrite_result
+16: drop(15_res)
+17: move(14_fwrite_result)
+18: 16_anonymous := Int(1)
+19: move(16_anonymous)
+20: 17_anonymous := "w"
+21: move(17_anonymous)
+22: receiver_Ssaid(18) = @4( 16_anonymous, 17_anonymous,)
+23: 19_stdoutptrb = 18_fdopen_result
+24: move(18_fdopen_result)
+25: move(19_stdoutptrb)
+26: receiver_Ssaid(20) = @8( 19_stdoutptrb,)
+27: 21_resb = 20_fflush_result
+28: drop(21_resb)
+29: move(20_fflush_result)
+30: return
 
-fn 29:
-block_15
-0: 16_anonymous := "test"
-1: borrow(16_anonymous)
-2: receiver_Ssaid(17) = yielding@33( 16_anonymous,)
-3: 18_projected_str = 17_project_result
-4: move(17_project_result)
-5: 19_anonymous := "before main \n"
-6: borrow(19_anonymous)
-7: 20_anonymous := Int(13)
-8: borrow(20_anonymous)
-9: @17( 19_anonymous, 20_anonymous,)
-10: borrow_end(19_anonymous)
-11: borrow_end(20_anonymous)
-12: drop(19_anonymous)
-13: borrow(18_projected_str)
-14: drop(20_anonymous)
-15: 21_anonymous := Int(4)
-16: borrow(21_anonymous)
-17: @17( 18_projected_str, 21_anonymous,)
-18: borrow_end(18_projected_str)
-19: drop(18_projected_str)
-20: borrow_end(21_anonymous)
-21: drop(21_anonymous)
-22: return
-
-fn 33:
+fn 41:
 block_22
-0: 23_element = fnarg
-1: yield 23
+0: 23_anonymous := "test"
+1: move(23_anonymous)
+2: receiver_Ssaid(24) = yielding@45( 23_anonymous,)
+3: 25_projected_str = 24_project_result
+4: move(24_project_result)
+5: 26_anonymous := "before main \n"
+6: move(26_anonymous)
+7: 27_anonymous := Int(13)
+8: move(27_anonymous)
+9: @29( 26_anonymous, 27_anonymous,)
+10: move(25_projected_str)
+11: 28_anonymous := Int(4)
+12: move(28_anonymous)
+13: @29( 25_projected_str, 28_anonymous,)
+14: return
+
+fn 45:
+block_29
+0: 30_element = fnarg
+1: yield 30

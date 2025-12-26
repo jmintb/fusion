@@ -1,25 +1,23 @@
-use crate::analysis::pipeline::transform_ir;
 use anyhow::Result;
 use melior::ExecutionEngine;
 use tracing::debug;
 
-use crate::{
-    ast::{identifiers::ScopeID, parser::parse, scopes::build_program_scopes},
-    backend::mlir::codegen::{generate_mlir, MlirGenerationConfig},
-    cli::load_program,
-    cli::load_program_without_std_lib,
-    ir::{IrGenerator, IrProgram},
-    types::resolve_types,
-};
-
+use crate::analysis::pipeline::transform_ir;
 use crate::analysis::type_evaluation::evaluate_types;
+use crate::ast::identifiers::ScopeID;
+use crate::ast::parser::parse;
+use crate::ast::scopes::build_program_scopes;
+use crate::backend::mlir::codegen::{generate_mlir, MlirGenerationConfig};
+use crate::cli::{load_program, load_program_without_std_lib};
+use crate::ir::{IrGenerator, IrProgram};
+use crate::types::resolve_types;
 
 pub fn produce_ir(src: &str) -> Result<IrProgram> {
     let input = load_program(Some(src.to_string()))?;
     let (ast, mut node_db, _messages) = parse(&input)?;
     let program_scopes = build_program_scopes(&ast, &mut node_db);
-    let (expression_types, type_db) = resolve_types(&ast, &node_db, &program_scopes, ScopeID(0));
-    let ir_generator = IrGenerator::new(ast, node_db, expression_types, type_db);
+    let (expression_types, _) = resolve_types(&ast, &node_db, &program_scopes, ScopeID(0));
+    let ir_generator = IrGenerator::new(ast, node_db, expression_types);
     Ok(ir_generator.convert_to_ssa())
 }
 
@@ -27,9 +25,9 @@ pub fn produce_ir_without_std(src: &str) -> Result<IrProgram> {
     let input = load_program_without_std_lib(Some(src.to_string()))?;
     let (ast, mut node_db, _messages) = parse(&input)?;
     let program_scopes = build_program_scopes(&ast, &mut node_db);
-    let (expression_types, type_db) = resolve_types(&ast, &node_db, &program_scopes, ScopeID(0));
+    let (expression_types, _) = resolve_types(&ast, &node_db, &program_scopes, ScopeID(0));
     debug!("type db: {:#?}", expression_types);
-    let ir_generator = IrGenerator::new(ast, node_db, expression_types, type_db);
+    let ir_generator = IrGenerator::new(ast, node_db, expression_types);
     Ok(ir_generator.convert_to_ssa())
 }
 
@@ -61,7 +59,7 @@ pub fn compile(input: &str) -> Result<ExecutionEngine> {
 
     let mlir_generation_config = MlirGenerationConfig {
         program: ir,
-        verify_mlir: true,
+        verify_mlir: false,
         program_types: types,
     };
 

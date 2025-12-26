@@ -1,13 +1,10 @@
-use std::{
-    collections::{BTreeMap, BTreeSet, VecDeque},
-    fmt::Debug,
-    fmt::Display,
-};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::fmt::{Debug, Display};
+
+use anyhow::{anyhow, bail, Result};
+use tracing::debug;
 
 use crate::ir::BlockId;
-use anyhow::{anyhow, bail, Result};
-
-use tracing::debug;
 
 #[derive(Clone, Debug)]
 pub struct ControlFlowGraph<T> {

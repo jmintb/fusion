@@ -1,13 +1,10 @@
-use std::{collections::HashMap, fmt::Display};
+use std::fmt::Display;
 
 use anyhow::{bail, Result};
-use melior::{dialect::llvm, ir::r#type::IntegerType, Context};
 
-use super::{
-    declarations::ModuleDeclaration,
-    identifiers::{BlockID, ExpressionID, StatementID},
-    NodeDatabase, Scope,
-};
+use super::declarations::ModuleDeclaration;
+use super::identifiers::{BlockID, ExpressionID, StatementID};
+use super::{NodeDatabase, Scope};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Default)]
 pub struct Identifier(pub String);
@@ -30,27 +27,6 @@ pub enum Type {
     Array(Box<Type>, usize), // TODO: get rid of this Box
     Pointer,
     Unit,
-}
-
-// TODO: this should really happen in the types module.
-impl Type {
-    pub fn as_mlir_type<'c, 'a>(
-        &self,
-        context: &'c Context,
-        _types: &HashMap<Identifier, Type>,
-    ) -> melior::ir::Type<'a>
-    where
-        'c: 'a,
-    {
-        match self {
-            Type::Pointer => llvm::r#type::pointer(context, 0),
-            Type::String => llvm::r#type::pointer(context, 0),
-            Type::SignedInteger => IntegerType::new(context, 32).into(),
-            Type::Unit => llvm::r#type::void(context),
-            Type::StringLiteral => llvm::r#type::pointer(context, 0),
-            _ => todo!("unimplemented type to mlir type {:?}", self),
-        }
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -108,6 +84,7 @@ pub enum FunctionKeyword {
     LlvmExtern,
     Normal,
     Projection,
+    Intrinsic,
 }
 
 impl TryFrom<String> for FunctionKeyword {
@@ -118,6 +95,7 @@ impl TryFrom<String> for FunctionKeyword {
             "extern fn" => FunctionKeyword::LlvmExtern,
             "fn" => FunctionKeyword::Normal,
             "projection fn" => FunctionKeyword::Projection,
+            "intrinsic fn" => FunctionKeyword::Intrinsic,
             _ => bail!("invalid function keyword: {}", value),
         })
     }

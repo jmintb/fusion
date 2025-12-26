@@ -1,13 +1,11 @@
-use anyhow::bail;
-use anyhow::Result;
 use std::collections::BTreeMap;
+
+use anyhow::{bail, Result};
 use tracing::debug;
 
-use crate::analysis::ir_transformer::IrInterpreter;
-use crate::analysis::ir_transformer::TransformContext;
-use crate::ir::BlockId;
-
-use crate::ir::{Instruction, IrProgram, Ssaid};
+use crate::analysis::ir_transformer::{IrInterpreter, TransformContext};
+use crate::ir::intrinsics::ResultfullIntrinsicCall;
+use crate::ir::{BlockId, Instruction, IrProgram, Ssaid};
 
 #[derive(Debug, Clone, Copy)]
 pub enum VariableState {
@@ -52,19 +50,12 @@ fn check_instruction(
     block_id: &BlockId,
     bc_ctx: &mut BorrowCheckerState,
 ) -> Result<usize> {
-    debug!("block states: {:#?}", bc_ctx.block_states);
     let variable_states = if let Some(state) = bc_ctx.block_states.get_mut(block_id) {
-        debug!("founding existing variable state for {block_id}");
         state
     } else if block_id == &ctx.scope.control_flow_graph.entry_point {
-        debug!("inserting new variable state map for entry point {block_id}");
         bc_ctx.block_states.insert(*block_id, BTreeMap::new());
         bc_ctx.block_states.get_mut(block_id).unwrap()
     } else {
-        debug!(
-            "generating new variable based on parents variable states {block_id} {:?}",
-            bc_ctx.block_states
-        );
         let parents = {
             let mut parents: Vec<BlockId> = ctx
                 .scope
@@ -115,23 +106,18 @@ fn check_instruction(
         bc_ctx.block_states.get_mut(block_id).unwrap()
     };
 
-    debug!(
-        "checking instruction {} in block {} with variable states {:#?}",
-        instruction_counter, block_id, variable_states
-    );
     let block = ctx.scope.blocks.get_mut(block_id).unwrap();
     let Some(instruction) = block.instructions.get(instruction_counter) else {
         return Ok(0);
     };
-    debug!(
-        "checking instruction {:?} {:?} {}",
-        instruction, variable_states, block_id
-    );
 
     match instruction {
         // TODO: Investigate if the result SSA variable is released and borrow checked properly.
         Instruction::Addition(_, _, result) => {
             variable_states.insert(*result, VariableState::Ready);
+        }
+        Instruction::Project { reciever, .. } => {
+            variable_states.insert(*reciever, VariableState::Ready);
         }
         Instruction::GreaterThan(_, _, result) => {
             variable_states.insert(*result, VariableState::Ready);
@@ -154,6 +140,11 @@ fn check_instruction(
         Instruction::Call(_function_id, _args, result, _) => {
             variable_states.insert(*result, VariableState::Ready);
         }
+        Instruction::CallIntrinsic(ResultfullIntrinsicCall {
+            result_receiver, ..
+        }) => {
+            variable_states.insert(*result_receiver, VariableState::Ready);
+        }
         Instruction::YieldingCall(_, _, result, _) => {
             variable_states.insert(*result, VariableState::Ready);
         }
@@ -175,10 +166,12 @@ fn check_instruction(
                     block_id.0
                 ))
             }
-            None => bail!(format!(
+            None => {
+                bail!(format!(
                 "Failed to borrow, Variable {} was not in any state, this should not be possible",
                 ctx.ssa_variables.get(id).unwrap().original_variable.0
-            )),
+            ))
+            }
 
             Some(VariableState::Moved) => {
                 bail!(format!(
@@ -192,10 +185,12 @@ fn check_instruction(
             Some(VariableState::Ready) => {
                 variable_states.insert(*id, VariableState::MutBorrowed);
             }
-            e => bail!(format!(
-                "can not mut borrow a variable {} which is in state {e:?}",
-                ctx.ssa_variables.get(id).unwrap().original_variable.0
-            )),
+            e => {
+                bail!(format!(
+                    "can not mut borrow a variable {} which is in state {e:?}",
+                    ctx.ssa_variables.get(id).unwrap().original_variable.0
+                ))
+            }
         },
         Instruction::BorrowEnd(id) => {
             let old_state = variable_states.insert(*id, VariableState::Ready);
@@ -217,11 +212,13 @@ fn check_instruction(
             Some(VariableState::Ready) => {
                 variable_states.insert(*id, VariableState::Moved);
             }
-            e => bail!(format!(
-                "variable {} in block {} was already {e:?}",
-                ctx.ssa_variables.get(id).unwrap().original_variable.0,
-                block_id.0
-            )),
+            e => {
+                bail!(format!(
+                    "variable {} in block {} was already {e:?}",
+                    ctx.ssa_variables.get(id).unwrap().original_variable.0,
+                    block_id.0
+                ))
+            }
         },
         _ => (),
     }
@@ -230,6 +227,7 @@ fn check_instruction(
 }
 
 pub fn check(ir_program: &IrProgram) -> Result<()> {
+    debug!("borrow checking {}", ir_program);
     for function_id in ir_program.control_flow_graphs.keys() {
         let interpreter = IrInterpreter::<BorrowCheckerState>::new(
             ir_program.control_flow_graphs.get(function_id).unwrap(),
@@ -244,13 +242,14 @@ pub fn check(ir_program: &IrProgram) -> Result<()> {
 #[cfg(test)]
 mod test {
 
-    use super::*;
+    use std::path::PathBuf;
 
-    use crate::compiler::produce_ir;
     use anyhow::Result;
     use rstest::rstest;
-    use std::path::PathBuf;
     use tracing::debug;
+
+    use super::*;
+    use crate::compiler::produce_ir;
 
     #[rstest]
     #[test_log::test]

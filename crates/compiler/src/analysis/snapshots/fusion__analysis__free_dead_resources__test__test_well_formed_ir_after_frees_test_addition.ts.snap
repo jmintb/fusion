@@ -3,50 +3,52 @@ source: crates/compiler/src/analysis/free_dead_resources.rs
 expression: "format!(\"{}\", ir_program)"
 ---
 IR:
-fn 17:
+fn 29:
 block_6
 0: 7_val = fnarg
 1: 8_len = fnarg
 2: 9_anonymous := Int(1)
-3: borrow(9_anonymous)
+3: move(9_anonymous)
 4: 10_anonymous := "w"
-5: borrow(10_anonymous)
-6: receiver_Ssaid(11) = @0( 9_anonymous, 10_anonymous,)
-7: borrow_end(9_anonymous)
-8: borrow_end(10_anonymous)
-9: 12_stdoutptr = 11_fdopen_result
-10: drop(9_anonymous)
-11: move(11_fdopen_result)
-12: drop(10_anonymous)
-13: borrow(7_val)
-14: borrow(8_len)
-15: 13_anonymous := Int(1)
-16: borrow(13_anonymous)
-17: borrow(12_stdoutptr)
-18: receiver_Ssaid(14) = @2( 7_val, 8_len, 13_anonymous, 12_stdoutptr,)
-19: borrow_end(7_val)
-20: drop(7_val)
-21: borrow_end(8_len)
-22: drop(8_len)
-23: drop(14_fwrite_result)
-24: borrow_end(13_anonymous)
-25: borrow_end(12_stdoutptr)
-26: drop(13_anonymous)
-27: drop(12_stdoutptr)
-28: return
+5: move(10_anonymous)
+6: receiver_Ssaid(11) = @4( 9_anonymous, 10_anonymous,)
+7: 12_stdoutptr = 11_fdopen_result
+8: move(11_fdopen_result)
+9: move(7_val)
+10: move(8_len)
+11: 13_anonymous := Int(1)
+12: move(13_anonymous)
+13: move(12_stdoutptr)
+14: receiver_Ssaid(14) = @6( 7_val, 8_len, 13_anonymous, 12_stdoutptr,)
+15: 15_res = 14_fwrite_result
+16: drop(15_res)
+17: move(14_fwrite_result)
+18: 16_anonymous := Int(1)
+19: move(16_anonymous)
+20: 17_anonymous := "w"
+21: move(17_anonymous)
+22: receiver_Ssaid(18) = @4( 16_anonymous, 17_anonymous,)
+23: 19_stdoutptrb = 18_fdopen_result
+24: move(18_fdopen_result)
+25: move(19_stdoutptrb)
+26: receiver_Ssaid(20) = @8( 19_stdoutptrb,)
+27: 21_resb = 20_fflush_result
+28: drop(21_resb)
+29: move(20_fflush_result)
+30: return
 
-fn 28:
-block_15
-0: 16_anonymous := Int(2)
-1: 17_a = 16_anonymous
-2: move(16_anonymous)
-3: 18_anonymous := Int(3)
-4: 19_b = 18_anonymous
-5: move(18_anonymous)
-6: 20_@addition_result = 17_a + 19_b
-7: move(17_a)
-8: move(19_b)
-9: 21_result = 20_@addition_result
-10: drop(21_result)
-11: move(20_@addition_result)
+fn 40:
+block_22
+0: 23_anonymous := Int(2)
+1: 24_a = 23_anonymous
+2: move(23_anonymous)
+3: 25_anonymous := Int(3)
+4: 26_b = 25_anonymous
+5: move(25_anonymous)
+6: 27_@addition_result = 24_a + 26_b
+7: move(24_a)
+8: move(26_b)
+9: 28_result = 27_@addition_result
+10: drop(28_result)
+11: move(27_@addition_result)
 12: return

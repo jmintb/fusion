@@ -3,69 +3,77 @@ source: crates/compiler/src/ir.rs
 expression: "format!(\"{}\", ir_progam)"
 ---
 IR:
-fn 17:
+fn 27:
 block_6
 0: 7_val = fnarg
 1: 8_len = fnarg
 2: 9_anonymous := Int(1)
-3: borrow(9_anonymous)
+3: move(9_anonymous)
 4: 10_anonymous := "w"
-5: borrow(10_anonymous)
-6: receiver_Ssaid(11) = @0( 9_anonymous, 10_anonymous,)
-7: borrow_end(9_anonymous)
-8: borrow_end(10_anonymous)
-9: 12_stdoutptr = 11_fdopen_result
-10: move(11_fdopen_result)
-11: borrow(7_val)
-12: borrow(8_len)
-13: 13_anonymous := Int(1)
-14: borrow(13_anonymous)
-15: borrow(12_stdoutptr)
-16: receiver_Ssaid(14) = @2( 7_val, 8_len, 13_anonymous, 12_stdoutptr,)
-17: borrow_end(7_val)
-18: borrow_end(8_len)
-19: borrow_end(13_anonymous)
-20: borrow_end(12_stdoutptr)
-21: return
+5: move(10_anonymous)
+6: receiver_Ssaid(11) = @2( 9_anonymous, 10_anonymous,)
+7: 12_stdoutptr = 11_fdopen_result
+8: move(11_fdopen_result)
+9: move(7_val)
+10: move(8_len)
+11: 13_anonymous := Int(1)
+12: move(13_anonymous)
+13: move(12_stdoutptr)
+14: receiver_Ssaid(14) = @4( 7_val, 8_len, 13_anonymous, 12_stdoutptr,)
+15: 15_res = 14_fwrite_result
+16: move(14_fwrite_result)
+17: 16_anonymous := Int(1)
+18: move(16_anonymous)
+19: 17_anonymous := "w"
+20: move(17_anonymous)
+21: receiver_Ssaid(18) = @2( 16_anonymous, 17_anonymous,)
+22: 19_stdoutptrb = 18_fdopen_result
+23: move(18_fdopen_result)
+24: move(19_stdoutptrb)
+25: receiver_Ssaid(20) = @6( 19_stdoutptrb,)
+26: 21_resb = 20_fflush_result
+27: move(20_fflush_result)
+28: return
 
-fn 36:
-block_15
-0: 16_anonymous := "some str"
-1: 17_test_val = 16_anonymous
-2: move(16_anonymous)
-3: 18_anonymous := Int(1)
-4: 19_anonymous := Int(0)
-5: 20_@greater_than_result = 18_anonymous > 19_anonymous
-6: move(18_anonymous)
-7: move(19_anonymous)
-8: if 20_@greater_than_result then 21_block else 23_block
-
-block_21
-0: borrow(17_test_val)
-1: @39( 17_test_val,)
-2: borrow_end(17_test_val)
-3: move(17_test_val)
-4: @42( 17_test_val,)
-
-block_23
-0: borrow(17_test_val)
-1: @39( 17_test_val,)
-2: borrow_end(17_test_val)
-3: move(17_test_val)
-4: @42( 17_test_val,)
-
+fn 46:
 block_22
+0: 23_anonymous := "some str"
+1: 24_test_val = 23_anonymous
+2: move(23_anonymous)
+3: 25_anonymous := Int(1)
+4: 26_anonymous := Int(0)
+5: 27_@greater_than_result = 25_anonymous > 26_anonymous
+6: move(25_anonymous)
+7: move(26_anonymous)
+8: if 27_@greater_than_result then 28_block else 31_block
+
+block_28
+0: 29_anon = Project<24_test_val>
+1: move(29_anon)
+2: @49( 29_anon,)
+3: move(24_test_val)
+4: @52( 24_test_val,)
+
+block_31
+0: 32_anon = Project<24_test_val>
+1: move(32_anon)
+2: @49( 32_anon,)
+3: move(24_test_val)
+4: @52( 24_test_val,)
+
+block_30
 0: return
 
-block_22
+block_30
 0: return
 
-fn 39:
-block_24
-0: 25_val = fnarg
-1: return
+fn 49:
+block_33
+0: 34_val = fnarg
+1: 34_val = Project<34_val>
+2: return
 
-fn 42:
-block_26
-0: 27_val = fnarg
+fn 52:
+block_35
+0: 36_val = fnarg
 1: return

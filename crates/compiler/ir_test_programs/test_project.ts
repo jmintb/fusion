@@ -6,6 +6,6 @@ fn main() {
   return;
 }
 
-projection fn project(element: str) -> str {
+projection fn project(owned element: str) -> str {
   yield element;
 }

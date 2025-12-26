@@ -26,23 +26,30 @@ enum SubCommands {
 }
 
 fn load_std_lib() -> String {
-    // TODO: should stdout be closed?
     "
-        
-extern fn fdopen(fd: integer, mode: str) -> ptr;
-extern fn fclose(fd: str);
-extern fn fwrite(val: str, size: integer, len: integer, file: str) -> integer;
+
+intrinsic fn write_bytes(owned value: ptr, owned destination: ptr, owned length: integer);
+intrinsic fn pointer_from_offset(owned base_pointer: ptr, owned offset: integer) -> ptr;
+
+extern fn free(let ptr: ptr);
+extern fn malloc(owned size: integer) -> ptr;        
+extern fn fdopen(owned fd: integer, owned mode: str) -> ptr;
+extern fn fclose(owned fd: str) -> integer;
+extern fn fwrite(owned val: ptr, owned size: integer, owned len: integer, owned file: str) -> integer;
 extern fn sprintf(output: str, format: str, number: integer) -> integer;
-extern fn fflush(file: str) -> integer;
+extern fn fflush(owned file: str) -> integer;
 extern fn sleep(time: integer) -> integer;
-fn print(val: str, len: integer) {
+fn print(owned val: str, owned len: integer) {
      let stdoutptr = fdopen(1, \"w\");
-     fwrite(val, len, 1, stdoutptr);
+     let res = fwrite(val, len, 1, stdoutptr);
+     let stdoutptrb = fdopen(1, \"w\");
+     let resb = fflush(stdoutptrb);
      return;
     }
     "
     .to_string()
-}
+} // TODO: sort out proper booking of the stdout "file". Note we open stdout twice to appease the borrow checker until the language
+  // can handle this case properly.
 
 pub fn load_program(path: Option<String>) -> Result<String> {
     let path = path.unwrap_or("./main.ts".to_string());

@@ -2,7 +2,8 @@ use core::panic;
 use std::fmt::Display;
 
 use anyhow::{bail, Result};
-use pest::{iterators::Pair, Parser};
+use pest::iterators::Pair;
+use pest::Parser;
 use pest_derive::Parser;
 
 #[derive(Parser)]

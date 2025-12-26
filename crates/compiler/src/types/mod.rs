@@ -1,18 +1,28 @@
 use std::collections::HashMap;
+use std::marker::PhantomData;
+
+use tracing::debug;
 
 use crate::ast::identifiers::{
-    DeclarationID, ExpressionID, FunctionDeclarationID, NodeID, ScopeID, StatementID,
+    DeclarationID,
+    ExpressionID,
+    FunctionDeclarationID,
+    NodeID,
+    ScopeID,
+    StatementID,
 };
-use crate::ast::nodes;
-use crate::ast::nodes::AccessModes;
 use crate::ast::nodes::{
-    Assignment, Expression, FunctionKeyword, Identifier, StructDeclaration, Value,
+    AccessModes,
+    Assignment,
+    Expression,
+    FunctionKeyword,
+    Identifier,
+    StructDeclaration,
+    Value,
 };
 use crate::ast::scopes::Scope;
 use crate::ast::{Ast, NodeDatabase};
 use crate::identifiers::{IDGenerator, ID};
-use std::marker::PhantomData;
-use tracing::debug;
 
 #[derive(Debug, Clone, Copy, Default, Ord, PartialEq, PartialOrd, Eq)]
 pub enum Type {
@@ -28,19 +38,6 @@ pub enum Type {
     #[default]
     Unit,
     Array(ArrayTypeID),
-}
-
-impl Type {
-    fn from_ast_node(node: &nodes::Type) -> Self {
-        match node {
-            crate::ast::nodes::Type::String => Self::String,
-            crate::ast::nodes::Type::StringLiteral => Self::String,
-            crate::ast::nodes::Type::Pointer => Self::Pointer,
-            crate::ast::nodes::Type::SignedInteger => Self::Integer(SignedIntegerType(32)),
-            crate::ast::nodes::Type::Unit => Self::Unit,
-            _ => todo!("Add type conversion {:?}", node),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
@@ -293,17 +290,9 @@ pub fn resolve_types(
             .get(&function_declaration_id)
             .unwrap();
 
-        let return_type = Type::from_ast_node(
-            function_declaration
-                .return_type
-                .as_ref()
-                .unwrap_or(&nodes::Type::Unit),
-        );
+        let return_type = Type::Unit;
 
-        let parameter_types = function_declaration
-            .argument_types()
-            .map(Type::from_ast_node)
-            .collect();
+        let parameter_types = Vec::new();
         let parameter_access_modes = function_declaration.parameter_access_modes().collect();
 
         let function_type = FunctionType {

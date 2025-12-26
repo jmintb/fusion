@@ -1,11 +1,8 @@
-use crate::ast::NodeID;
-use crate::ast::ScopeID;
 use std::collections::HashMap;
 
-use super::identifiers::DeclarationID;
-use super::identifiers::StatementID;
-use super::Ast;
-use super::NodeDatabase;
+use super::identifiers::{DeclarationID, StatementID};
+use super::{Ast, NodeDatabase};
+use crate::ast::{NodeID, ScopeID};
 
 #[derive(Debug, Clone)]
 pub struct Scope {

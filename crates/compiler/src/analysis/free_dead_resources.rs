@@ -2,13 +2,10 @@ use std::collections::BTreeMap;
 
 use tracing::debug;
 
-use crate::{
-    analysis::liveness_analysis::AbstractAddress,
-    ast::identifiers::FunctionDeclarationID,
-    ir::{BlockId, Instruction, IrProgram},
-};
-
 use super::liveness_analysis::VariableLiveness;
+use crate::analysis::liveness_analysis::AbstractAddress;
+use crate::ast::identifiers::FunctionDeclarationID;
+use crate::ir::{BlockId, Instruction, IrProgram};
 
 pub fn insert_free(
     variable_liveness: BTreeMap<FunctionDeclarationID, VariableLiveness>,
@@ -90,9 +87,10 @@ pub fn insert_free(
 #[cfg(test)]
 mod test {
 
+    use std::path::PathBuf;
+
     use anyhow::{bail, Result};
     use rstest::rstest;
-    use std::path::PathBuf;
 
     #[rstest]
     #[test_log::test]
