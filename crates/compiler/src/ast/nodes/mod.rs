@@ -417,5 +417,4 @@ impl Value {
 #[derive(Debug, Clone)]
 pub struct Integer {
     pub(crate) value: isize,
-
 }

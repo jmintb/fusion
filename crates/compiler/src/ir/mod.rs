@@ -38,8 +38,7 @@ use crate::ast::nodes::{
 };
 use crate::ast::{Ast, NodeDatabase};
 use crate::control_flow_graph::ControlFlowGraph;
-use crate::types::FlatEntityStore;
-use crate::types::IntegerBitWidth;
+use crate::types::{FlatEntityStore, IntegerBitWidth};
 
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Copy, Hash, Default)]
 pub struct Ssaid(pub usize);
@@ -171,7 +170,6 @@ pub struct AnnotatedAssignment {
     pub type_name_id: usize,
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub enum Instruction {
     Addition(Ssaid, Ssaid, Ssaid),
@@ -235,12 +233,12 @@ pub enum Instruction {
     DeclareUnsignedIntegerType {
         receiver: Ssaid,
         type_name_id: usize,
-        bit_width: IntegerBitWidth
+        bit_width: IntegerBitWidth,
     },
     DeclareIntegerType {
         receiver: Ssaid,
         type_name_id: usize,
-        bit_width: IntegerBitWidth
+        bit_width: IntegerBitWidth,
     },
     DeclareStringType {
         receiver: Ssaid,
@@ -644,7 +642,6 @@ pub struct IrGenerator {
     entry_point_function: FunctionDeclarationID,
     static_values: HashMap<Ssaid, Value>,
     external_function_declaraitons: Vec<FunctionDeclarationID>,
-    expression_types: HashMap<ExpressionID, types::Type>,
     type_ssaids: BTreeMap<crate::ast::nodes::Type, Ssaid>,
     struct_field_identifier: Vec<Identifier>,
     type_names: FlatEntityStore<TypeName, usize>,
@@ -652,14 +649,8 @@ pub struct IrGenerator {
     function_arguments: BTreeMap<FunctionDeclarationID, Vec<Ssaid>>,
 }
 
-use crate::types;
-
 impl IrGenerator {
-    pub fn new(
-        ast: Ast,
-        node_db: NodeDatabase,
-        expression_types: HashMap<ExpressionID, types::Type>,
-    ) -> Self {
+    pub fn new(ast: Ast, node_db: NodeDatabase) -> Self {
         let entry_block = Block {
             instructions: Vec::new(),
             produced_directly_by_control_flow: false,
@@ -682,7 +673,6 @@ impl IrGenerator {
             node_db,
             static_values: HashMap::new(),
             external_function_declaraitons: Vec::new(),
-            expression_types,
             block_results: BTreeMap::new(),
             type_ssaids: BTreeMap::new(),
             struct_field_identifier: Vec::new(),
@@ -850,24 +840,24 @@ impl IrGenerator {
         let builtin_boolean_type = self.add_ssa_variable(Identifier::new("boolean".to_string()));
 
         let top_level_block = self.add_block();
-        
+
         let u8_integer_type_name_id = self.type_names.insert(Type::UnsignedInteger8);
         self.add_instruction(
             top_level_block,
             Instruction::DeclareIntegerType {
                 receiver: builtin_u8_type,
                 type_name_id: u8_integer_type_name_id,
-                bit_width: IntegerBitWidth::Bit8
+                bit_width: IntegerBitWidth::Bit8,
             },
         );
-        
+
         let u16_integer_type_name_id = self.type_names.insert(Type::UnsignedInteger16);
         self.add_instruction(
             top_level_block,
             Instruction::DeclareIntegerType {
                 receiver: builtin_u16_type,
                 type_name_id: u16_integer_type_name_id,
-                bit_width: IntegerBitWidth::Bit16
+                bit_width: IntegerBitWidth::Bit16,
             },
         );
 
@@ -877,47 +867,47 @@ impl IrGenerator {
             Instruction::DeclareIntegerType {
                 receiver: builtin_u32_type,
                 type_name_id: u32_integer_type_name_id,
-                bit_width: IntegerBitWidth::Bit32
+                bit_width: IntegerBitWidth::Bit32,
             },
         );
-        
+
         let u64_integer_type_name_id = self.type_names.insert(Type::UnsignedInteger64);
         self.add_instruction(
             top_level_block,
             Instruction::DeclareIntegerType {
                 receiver: builtin_u64_type,
                 type_name_id: u64_integer_type_name_id,
-                bit_width: IntegerBitWidth::Bit64
+                bit_width: IntegerBitWidth::Bit64,
             },
         );
-        
+
         let usize_integer_type_name_id = self.type_names.insert(Type::UnsignedIntegerSized);
         self.add_instruction(
             top_level_block,
             Instruction::DeclareIntegerType {
                 receiver: builtin_usize_type,
-                type_name_id: u64_integer_type_name_id,
-                bit_width: IntegerBitWidth::PlatformSize
+                type_name_id: usize_integer_type_name_id,
+                bit_width: IntegerBitWidth::PlatformSize,
             },
         );
-        
+
         let i8_integer_type_name_id = self.type_names.insert(Type::Integer8);
         self.add_instruction(
             top_level_block,
             Instruction::DeclareIntegerType {
                 receiver: builtin_i8_type,
                 type_name_id: i8_integer_type_name_id,
-                bit_width: IntegerBitWidth::Bit8
+                bit_width: IntegerBitWidth::Bit8,
             },
         );
-        
+
         let i16_integer_type_name_id = self.type_names.insert(Type::Integer16);
         self.add_instruction(
             top_level_block,
             Instruction::DeclareIntegerType {
                 receiver: builtin_i16_type,
                 type_name_id: i16_integer_type_name_id,
-                bit_width: IntegerBitWidth::Bit16
+                bit_width: IntegerBitWidth::Bit16,
             },
         );
 
@@ -927,20 +917,19 @@ impl IrGenerator {
             Instruction::DeclareIntegerType {
                 receiver: builtin_i32_type,
                 type_name_id: i32_integer_type_name_id,
-                bit_width: IntegerBitWidth::Bit32
+                bit_width: IntegerBitWidth::Bit32,
             },
         );
-        
+
         let i64_integer_type_name_id = self.type_names.insert(Type::Integer64);
         self.add_instruction(
             top_level_block,
             Instruction::DeclareIntegerType {
                 receiver: builtin_i64_type,
                 type_name_id: i64_integer_type_name_id,
-                bit_width: IntegerBitWidth::Bit64
+                bit_width: IntegerBitWidth::Bit64,
             },
         );
-
 
         let isize_integer_type_name_id = self.type_names.insert(Type::IntegerSize);
         self.add_instruction(
@@ -948,10 +937,9 @@ impl IrGenerator {
             Instruction::DeclareIntegerType {
                 receiver: builtin_isize_type,
                 type_name_id: isize_integer_type_name_id,
-                bit_width: IntegerBitWidth::PlatformSize
+                bit_width: IntegerBitWidth::PlatformSize,
             },
         );
-
 
         let string_type_name_id = self.type_names.insert(Type::String);
         self.add_instruction(
@@ -1525,10 +1513,7 @@ impl IrGenerator {
                     return (current_block, Some(ssa_var));
                 }
                 _ => {
-                    let ssa_var = self.declare_static_value(
-                        val,
-                        current_block,
-                    );
+                    let ssa_var = self.declare_static_value(val, current_block);
                     return (current_block, Some(ssa_var));
                 }
             },
@@ -1861,11 +1846,7 @@ impl IrGenerator {
             .push(assign_instruction)
     }
 
-    fn declare_static_value(
-        &mut self,
-        val: Value,
-        current_block: BlockId,
-    ) -> Ssaid {
+    fn declare_static_value(&mut self, val: Value, current_block: BlockId) -> Ssaid {
         let static_ssa_id = self.add_ssa_variable(Identifier("anonymous".to_string()));
         self.static_values.insert(static_ssa_id, val);
         self.add_instruction(current_block, Instruction::AnonymousValue(static_ssa_id));

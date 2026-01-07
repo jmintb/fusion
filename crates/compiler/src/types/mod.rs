@@ -41,12 +41,12 @@ pub enum Type {
 }
 
 #[derive(Clone, Debug, Copy, PartialEq, Ord, Eq, PartialOrd)]
-pub enum IntegerBitWidth  {
+pub enum IntegerBitWidth {
     Bit64,
     Bit32,
     Bit16,
     Bit8,
-    PlatformSize
+    PlatformSize,
 }
 
 #[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
