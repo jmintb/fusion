@@ -9,7 +9,7 @@ use crate::ast::identifiers::FunctionDeclarationID;
 use crate::control_flow_graph::ControlFlowGraph;
 use crate::ir::intrinsics::ResultfullIntrinsicCall;
 use crate::ir::{AnnotatedAssignment, BlockId, Instruction, IrProgram, Ssaid};
-use crate::types::{ArrayTypeID, FlatEntityStore, SignedIntegerType, StructTypeID, Type};
+use crate::types::{ArrayTypeID, FlatEntityStore, StructTypeID, Type};
 
 pub type TypeName = crate::ast::nodes::Type;
 
@@ -244,9 +244,8 @@ fn check_types(
         Instruction::DeclareUnsignedIntegerType {
             receiver,
             type_name_id,
-            bit_width
+            bit_width,
         } => {
-
             bc_ctx.comp_time_types.insert(
                 *receiver,
                 Type::UnsignedInteger(crate::types::UnsignedIntegerType(*bit_width)),
@@ -257,9 +256,8 @@ fn check_types(
         Instruction::DeclareIntegerType {
             receiver,
             type_name_id,
-            bit_width
+            bit_width,
         } => {
-
             bc_ctx.comp_time_types.insert(
                 *receiver,
                 Type::Integer(crate::types::SignedIntegerType(*bit_width)),
@@ -390,13 +388,15 @@ fn check_types(
             let annotated_type_id = bc_ctx.type_name_ids[annotated_type_name];
             let value_type_id = bc_ctx.variable_types[value];
 
-            if annotated_type_id != value_type_id && ctx.ir_program.static_values.contains_key(value) {
+            if annotated_type_id != value_type_id
+                && ctx.ir_program.static_values.contains_key(value)
+            {
                 let value_type = bc_ctx.comp_time_types[&value_type_id];
                 match value_type {
                     Type::Integer(_) | Type::UnsignedInteger(_) => {
                         bc_ctx.variable_types.insert(*value, annotated_type_id);
                     }
-                    _ => panic!("can't assign value to to type")
+                    _ => panic!("can't assign value to to type"),
                 }
             } else {
                 assert!(annotated_type_id == value_type_id);

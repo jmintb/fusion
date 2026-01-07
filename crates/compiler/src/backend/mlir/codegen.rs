@@ -15,7 +15,7 @@ use melior::ir::attribute::{
     TypeAttribute,
 };
 use melior::ir::operation::{OperationBuilder, OperationLike};
-use melior::ir::r#type::{FunctionType, IntegerType, MemRefType, Type as MeliorType};
+use melior::ir::r#type::{FunctionType, IntegerType, MemRefType};
 use melior::ir::{
     Attribute,
     Block,
@@ -147,16 +147,36 @@ where
     match fusion_type {
         types::Type::Pointer => llvm::r#type::pointer(context, 0),
         types::Type::String => llvm::r#type::pointer(context, 0),
-        types::Type::UnsignedInteger(UnsignedIntegerType(types::IntegerBitWidth::Bit8)) => IntegerType::new(context, 8).into(),
-        types::Type::UnsignedInteger(UnsignedIntegerType(types::IntegerBitWidth::Bit16)) => IntegerType::new(context, 16).into(),
-        types::Type::UnsignedInteger(UnsignedIntegerType(types::IntegerBitWidth::Bit32)) => IntegerType::new(context, 32).into(),
-        types::Type::UnsignedInteger(UnsignedIntegerType(types::IntegerBitWidth::Bit64)) => IntegerType::new(context, 64).into(),
-        types::Type::UnsignedInteger(UnsignedIntegerType(types::IntegerBitWidth::PlatformSize)) => IntegerType::new(context, PLATFORM_BIT_WIDTH as u32).into(),
-        types::Type::Integer(SignedIntegerType(types::IntegerBitWidth::Bit8)) => IntegerType::new(context, 8).into(),
-        types::Type::Integer(SignedIntegerType(types::IntegerBitWidth::Bit16)) => IntegerType::new(context, 16).into(),
-        types::Type::Integer(SignedIntegerType(types::IntegerBitWidth::Bit32)) => IntegerType::new(context, 32).into(),
-        types::Type::Integer(SignedIntegerType(types::IntegerBitWidth::Bit64)) => IntegerType::new(context, 64).into(),
-        types::Type::Integer(SignedIntegerType(types::IntegerBitWidth::PlatformSize)) => IntegerType::new(context, PLATFORM_BIT_WIDTH as u32).into(),
+        types::Type::UnsignedInteger(UnsignedIntegerType(types::IntegerBitWidth::Bit8)) => {
+            IntegerType::new(context, 8).into()
+        }
+        types::Type::UnsignedInteger(UnsignedIntegerType(types::IntegerBitWidth::Bit16)) => {
+            IntegerType::new(context, 16).into()
+        }
+        types::Type::UnsignedInteger(UnsignedIntegerType(types::IntegerBitWidth::Bit32)) => {
+            IntegerType::new(context, 32).into()
+        }
+        types::Type::UnsignedInteger(UnsignedIntegerType(types::IntegerBitWidth::Bit64)) => {
+            IntegerType::new(context, 64).into()
+        }
+        types::Type::UnsignedInteger(UnsignedIntegerType(types::IntegerBitWidth::PlatformSize)) => {
+            IntegerType::new(context, PLATFORM_BIT_WIDTH as u32).into()
+        }
+        types::Type::Integer(SignedIntegerType(types::IntegerBitWidth::Bit8)) => {
+            IntegerType::new(context, 8).into()
+        }
+        types::Type::Integer(SignedIntegerType(types::IntegerBitWidth::Bit16)) => {
+            IntegerType::new(context, 16).into()
+        }
+        types::Type::Integer(SignedIntegerType(types::IntegerBitWidth::Bit32)) => {
+            IntegerType::new(context, 32).into()
+        }
+        types::Type::Integer(SignedIntegerType(types::IntegerBitWidth::Bit64)) => {
+            IntegerType::new(context, 64).into()
+        }
+        types::Type::Integer(SignedIntegerType(types::IntegerBitWidth::PlatformSize)) => {
+            IntegerType::new(context, PLATFORM_BIT_WIDTH as u32).into()
+        }
         types::Type::Boolean => IntegerType::new(context, 1).into(),
         types::Type::Unit => llvm::r#type::void(context),
         types::Type::Array(array_type_id) => {
@@ -508,11 +528,7 @@ impl<'ctx> CodeGen<'ctx> {
                         let integer_val: Value = entry_block
                             .append_operation(melior::dialect::arith::constant(
                                 self.context,
-                                IntegerAttribute::new(
-                                    inner_type,
-                                    int.value as i64,
-                                )
-                                .into(),
+                                IntegerAttribute::new(inner_type, int.value as i64).into(),
                                 Location::unknown(self.context),
                             ))
                             .result(0)
@@ -967,7 +983,7 @@ impl<'ctx> CodeGen<'ctx> {
                 "generating call operation for extern function {} with return type {:?}",
                 function_declaration.identifier.0, return_type
             );
-            
+
             OperationBuilder::new("func.call", location)
                 .add_operands(&argument_values)
                 .add_attributes(&[(
