@@ -554,9 +554,8 @@ fn parse_annotated_assignment(
     let type_annotation_pair = inner_rules.next().unwrap();
     let type_annotation = parse_type_annotation(type_annotation_pair)?;
 
-    let expression = inner_rules.next().unwrap();
-
-    let expression = parse_expression(builder, expression);
+    let expression_pair = inner_rules.next().unwrap();
+    let expression = parse_expression(builder, expression_pair);
 
     let assignment = AnnotatedAssignment {
         id: Identifier::new(identifier.as_str().trim().into()),
@@ -566,6 +565,7 @@ fn parse_annotated_assignment(
 
     Ok(assignment)
 }
+
 
 fn parse_string(string: Pair<Rule>) -> Result<Value> {
     if let Rule::string = string.as_rule() {
