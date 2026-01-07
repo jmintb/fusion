@@ -15,7 +15,7 @@ use melior::ir::attribute::{
     TypeAttribute,
 };
 use melior::ir::operation::{OperationBuilder, OperationLike};
-use melior::ir::r#type::{FunctionType, IntegerType, MemRefType};
+use melior::ir::r#type::{FunctionType, IntegerType, MemRefType, Type as MeliorType};
 use melior::ir::{
     Attribute,
     Block,
@@ -45,7 +45,7 @@ use crate::backend::mlir::intrinsics::{
     generate_resultless_intrinsic_call,
 };
 use crate::control_flow_graph::ControlFlowGraph;
-use crate::ir::{self, BlockId, FunctionId, Instruction, IrProgram, Ssaid};
+use crate::ir::{self, AnnotatedAssignment, BlockId, FunctionId, Instruction, IrProgram, Ssaid};
 
 pub struct MlirGenerationConfig {
     pub program: IrProgram,
@@ -117,7 +117,7 @@ fn run_mlir_passes(context: &Context, module: &mut Module) {
     pass_manager.run(module).unwrap();
 }
 
-use crate::types;
+use crate::types::{self, SignedIntegerType, UnsignedIntegerType};
 
 fn get_variable_mlir_type<'c, 'a>(
     context: &'c Context,
@@ -134,6 +134,8 @@ where
     }
 }
 
+pub const PLATFORM_BIT_WIDTH: usize = std::mem::size_of::<usize>() * 8; // TODO: Check if there is a builtin way to get the bit width.
+
 pub fn as_mlir_type<'c, 'a>(
     fusion_type: types::Type,
     context: &'c Context,
@@ -145,7 +147,16 @@ where
     match fusion_type {
         types::Type::Pointer => llvm::r#type::pointer(context, 0),
         types::Type::String => llvm::r#type::pointer(context, 0),
-        types::Type::Integer(_) => IntegerType::new(context, 32).into(),
+        types::Type::UnsignedInteger(UnsignedIntegerType(types::IntegerBitWidth::Bit8)) => IntegerType::new(context, 8).into(),
+        types::Type::UnsignedInteger(UnsignedIntegerType(types::IntegerBitWidth::Bit16)) => IntegerType::new(context, 16).into(),
+        types::Type::UnsignedInteger(UnsignedIntegerType(types::IntegerBitWidth::Bit32)) => IntegerType::new(context, 32).into(),
+        types::Type::UnsignedInteger(UnsignedIntegerType(types::IntegerBitWidth::Bit64)) => IntegerType::new(context, 64).into(),
+        types::Type::UnsignedInteger(UnsignedIntegerType(types::IntegerBitWidth::PlatformSize)) => IntegerType::new(context, PLATFORM_BIT_WIDTH as u32).into(),
+        types::Type::Integer(SignedIntegerType(types::IntegerBitWidth::Bit8)) => IntegerType::new(context, 8).into(),
+        types::Type::Integer(SignedIntegerType(types::IntegerBitWidth::Bit16)) => IntegerType::new(context, 16).into(),
+        types::Type::Integer(SignedIntegerType(types::IntegerBitWidth::Bit32)) => IntegerType::new(context, 32).into(),
+        types::Type::Integer(SignedIntegerType(types::IntegerBitWidth::Bit64)) => IntegerType::new(context, 64).into(),
+        types::Type::Integer(SignedIntegerType(types::IntegerBitWidth::PlatformSize)) => IntegerType::new(context, PLATFORM_BIT_WIDTH as u32).into(),
         types::Type::Boolean => IntegerType::new(context, 1).into(),
         types::Type::Unit => llvm::r#type::void(context),
         types::Type::Array(array_type_id) => {
@@ -498,7 +509,7 @@ impl<'ctx> CodeGen<'ctx> {
                             .append_operation(melior::dialect::arith::constant(
                                 self.context,
                                 IntegerAttribute::new(
-                                    IntegerType::new(self.context, 32).into(),
+                                    inner_type,
                                     int.value as i64,
                                 )
                                 .into(),
@@ -825,7 +836,6 @@ impl<'ctx> CodeGen<'ctx> {
                     FlatSymbolRefAttribute::new(self.context, &function_declaration.identifier.0)
                         .into(),
                 )])
-                .add_results(&[return_type])
                 .build()?
         } else {
             debug!(
@@ -957,6 +967,7 @@ impl<'ctx> CodeGen<'ctx> {
                 "generating call operation for extern function {} with return type {:?}",
                 function_declaration.identifier.0, return_type
             );
+            
             OperationBuilder::new("func.call", location)
                 .add_operands(&argument_values)
                 .add_attributes(&[(
@@ -1370,6 +1381,20 @@ impl<'ctx> CodeGen<'ctx> {
                     r#struct,
                     reciever,
                     *field_name_index,
+                    current_block_id,
+                    block_references,
+                    variable_store,
+                )?;
+                None
+            }
+            Instruction::AnnotatedAssign(AnnotatedAssignment {
+                ref reciever,
+                ref value,
+                ..
+            }) => {
+                self.gen_assignment(
+                    reciever,
+                    value,
                     current_block_id,
                     block_references,
                     variable_store,

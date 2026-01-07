@@ -38,7 +38,7 @@ use super::nodes::{
 };
 use super::{Ast, NodeDatabase};
 use crate::ast::identifiers::DeclarationID;
-use crate::ast::nodes::{AccessModes, FunctionKeyword, Identifier};
+use crate::ast::nodes::{AccessModes, AnnotatedAssignment, FunctionKeyword, Identifier};
 
 #[derive(Parser)]
 #[grammar = "typed_script.pest"]
@@ -199,6 +199,7 @@ fn parse_statement(
         | Rule::r#return
         | Rule::r#yield
         | Rule::assignment
+        | Rule::annotation_assignment
         | Rule::assign => parse_expression(builder, statement)?.into(),
         _ => bail!("Recieved unexpected rule: {:?}", statement),
     })
@@ -211,6 +212,9 @@ fn parse_expression(builder: &mut AstBuilder, pair: Pair<Rule>) -> Result<Expres
         Rule::identifier => Expression::Value(Value::Variable(Identifier::new(
             pair.as_str().trim().into(),
         ))),
+        Rule::annotation_assignment => {
+            Expression::AnnotatedAssignment(parse_annotated_assignment(builder, pair)?)
+        }
         Rule::call => Expression::Call(parse_fn_call(builder, pair)?),
         Rule::structInit => Expression::Struct(parse_struct_init(builder, pair)?),
         Rule::integer => Expression::Value(Value::Integer(parse_integer(pair)?)),
@@ -531,6 +535,38 @@ fn parse_assignment(builder: &mut AstBuilder, pair: Pair<'_, Rule>) -> Result<As
     Ok(assignment)
 }
 
+fn parse_type_annotation(pair: Pair<'_, Rule>) -> Result<Type> {
+    let mut inner_rules = pair.into_inner();
+
+    let r#type = inner_rules.next().unwrap();
+
+    parse_type(r#type)
+}
+
+fn parse_annotated_assignment(
+    builder: &mut AstBuilder,
+    pair: Pair<'_, Rule>,
+) -> Result<AnnotatedAssignment> {
+    let mut inner_rules = pair.into_inner();
+
+    let identifier = inner_rules.next().unwrap();
+
+    let type_annotation_pair = inner_rules.next().unwrap();
+    let type_annotation = parse_type_annotation(type_annotation_pair)?;
+
+    let expression = inner_rules.next().unwrap();
+
+    let expression = parse_expression(builder, expression);
+
+    let assignment = AnnotatedAssignment {
+        id: Identifier::new(identifier.as_str().trim().into()),
+        expression: expression.unwrap(),
+        type_annotation,
+    };
+
+    Ok(assignment)
+}
+
 fn parse_string(string: Pair<Rule>) -> Result<Value> {
     if let Rule::string = string.as_rule() {
         Ok(Value::String(string.into_inner().as_str().to_string()))
@@ -575,13 +611,47 @@ fn parse_fn_arg(arg: Pair<Rule>) -> Result<FunctionArg> {
     })
 }
 
+fn parse_signed_integer_type_annotation(pair: Pair<Rule>) -> Result<Type> {
+    let mut inner = pair.into_inner();
+
+    let next = inner.next().unwrap();
+    Ok(match next.as_rule() {
+        Rule::integer => match next.as_str().trim() {
+            "64" => Type::Integer64,
+            "32" => Type::Integer32,
+            "16" => Type::Integer16,
+            "8" => Type::Integer8,
+            _ => todo!(),
+        },
+        Rule::system_bit_width => Type::IntegerSize,
+        e => bail!("expected to find bit width but got {:?}", e),
+    })
+}
+
+fn parse_unsigned_integer_type_annotation(pair: Pair<Rule>) -> Result<Type> {
+    let mut inner = pair.into_inner();
+
+    let next = inner.next().unwrap();
+    Ok(match next.as_rule() {
+        Rule::integer => match next.as_str().trim() {
+            "64" => Type::UnsignedInteger64,
+            "32" => Type::UnsignedInteger32,
+            "16" => Type::UnsignedInteger16,
+            "8" => Type::UnsignedInteger8,
+            _ => todo!(),
+        },
+        Rule::system_bit_width => Type::IntegerSize,
+        e => bail!("expected to find bit width but got {:?}", e),
+    })
+}
+
 fn parse_type(ty: Pair<Rule>) -> Result<Type> {
     let mut inner = ty.into_inner();
 
     let next = inner.next().unwrap();
     Ok(match next.as_rule() {
-        Rule::signed_integer => Type::SignedInteger,
-        Rule::unsigned_integer => Type::UnsignedInteger,
+        Rule::signed_integer => parse_signed_integer_type_annotation(next)?,
+        Rule::unsigned_integer => parse_unsigned_integer_type_annotation(next)?,
         Rule::array_type => {
             let mut next_inner = next.into_inner();
             let item_type = parse_type(next_inner.next().unwrap())?;

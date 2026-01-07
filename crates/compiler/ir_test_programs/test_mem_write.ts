@@ -11,7 +11,7 @@ fn project_raw_string(let val: String, let allocator: StringAllocator) -> ptr {
 }
 
 
-fn memory_write_wrapper(owned value: ptr, owned destination: ptr, owned length_in_bytes: integer, owned offset_in_bytes: integer) {
+fn memory_write_wrapper(owned value: ptr, owned destination: ptr, owned length_in_bytes: i32, owned offset_in_bytes: i32) {
   let offset_destination = pointer_from_offset(destination, offset_in_bytes);
   write_bytes(value, offset_destination, length_in_bytes);
   return
@@ -21,11 +21,11 @@ fn memory_write_wrapper(owned value: ptr, owned destination: ptr, owned length_i
 
 struct StringAllocator {
   memory_pool: ptr,
-  size: integer,
-  offset: integer,
+  size: i64,
+  offset: i32,
 }
 
-fn allocate_for_string(inout allocator: StringAllocator, owned length: integer) -> integer {
+fn allocate_for_string(inout allocator: StringAllocator, owned length: i32) -> i32 {
   let string_offset = allocator.offset;
   let new_offset = (string_offset) + (length) ;
   allocator.offset = new_offset;
@@ -33,18 +33,18 @@ fn allocate_for_string(inout allocator: StringAllocator, owned length: integer) 
 }
 
 fn init_string_allocator() -> StringAllocator {
-  let size = 5000;
+  let size: i64 = 5000;
   let memory = malloc(size);
   
   return StringAllocator { memory, size, 0 };
 }
 
 struct String {
-  memory_offset: integer,
-  length: integer,
+  memory_offset: i32,
+  length: i32,
 }
 
-fn new_string(inout allocator: StringAllocator, owned length: integer) -> String {
+fn new_string(inout allocator: StringAllocator, owned length: i32) -> String {
   let string_offset = allocate_for_string(allocator, length);
   return String { string_offset, length };
 }

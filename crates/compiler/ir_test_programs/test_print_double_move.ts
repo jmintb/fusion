@@ -5,6 +5,6 @@ fn main() {
     return;
 }
 
-fn consume(owned message: str, len: integer) {
+fn consume(owned message: str, len: i32) {
    return; 
 }

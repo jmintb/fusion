@@ -11,6 +11,6 @@ fn main() {
   return;
 }
 
-fn borrow_and_move(owned input: str, j: integer) {
+fn borrow_and_move(owned input: str, j: i32) {
   return; 
 }

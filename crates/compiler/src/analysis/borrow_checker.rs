@@ -5,7 +5,7 @@ use tracing::debug;
 
 use crate::analysis::ir_transformer::{IrInterpreter, TransformContext};
 use crate::ir::intrinsics::ResultfullIntrinsicCall;
-use crate::ir::{BlockId, Instruction, IrProgram, Ssaid};
+use crate::ir::{AnnotatedAssignment, BlockId, Instruction, IrProgram, Ssaid};
 
 #[derive(Debug, Clone, Copy)]
 pub enum VariableState {
@@ -150,6 +150,9 @@ fn check_instruction(
         }
         Instruction::Assign(to, _from) => {
             variable_states.insert(*to, VariableState::Ready);
+        }
+        Instruction::AnnotatedAssign(AnnotatedAssignment { reciever, .. }) => {
+            variable_states.insert(*reciever, VariableState::Ready);
         }
         Instruction::AnonymousValue(id) => {
             variable_states.insert(*id, VariableState::Ready);

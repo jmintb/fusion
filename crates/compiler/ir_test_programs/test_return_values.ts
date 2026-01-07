@@ -3,6 +3,6 @@ fn main() {
   return
 }
 
-fn generate_message() -> integer {
+fn generate_message() -> i32 {
   return 2 
 }

@@ -8,8 +8,8 @@ use super::ir_transformer::{IrInterpreter, TransformContext};
 use crate::ast::identifiers::FunctionDeclarationID;
 use crate::control_flow_graph::ControlFlowGraph;
 use crate::ir::intrinsics::ResultfullIntrinsicCall;
-use crate::ir::{BlockId, Instruction, IrProgram, Ssaid};
-use crate::types::{ArrayTypeID, FlatEntityStore, StructTypeID, Type};
+use crate::ir::{AnnotatedAssignment, BlockId, Instruction, IrProgram, Ssaid};
+use crate::types::{ArrayTypeID, FlatEntityStore, SignedIntegerType, StructTypeID, Type};
 
 pub type TypeName = crate::ast::nodes::Type;
 
@@ -241,13 +241,28 @@ fn check_types(
             let type_name = ctx.ir_program.type_names.get(*type_name_id).unwrap();
             bc_ctx.type_name_ids.insert(type_name.clone(), *receiver);
         }
+        Instruction::DeclareUnsignedIntegerType {
+            receiver,
+            type_name_id,
+            bit_width
+        } => {
+
+            bc_ctx.comp_time_types.insert(
+                *receiver,
+                Type::UnsignedInteger(crate::types::UnsignedIntegerType(*bit_width)),
+            );
+            let type_name = ctx.ir_program.type_names.get(*type_name_id).unwrap();
+            bc_ctx.type_name_ids.insert(type_name.clone(), *receiver);
+        }
         Instruction::DeclareIntegerType {
             receiver,
             type_name_id,
+            bit_width
         } => {
+
             bc_ctx.comp_time_types.insert(
                 *receiver,
-                Type::Integer(crate::types::SignedIntegerType(32)),
+                Type::Integer(crate::types::SignedIntegerType(*bit_width)),
             );
             let type_name = ctx.ir_program.type_names.get(*type_name_id).unwrap();
             bc_ctx.type_name_ids.insert(type_name.clone(), *receiver);
@@ -273,7 +288,7 @@ fn check_types(
                     bc_ctx.variable_types.insert(*ssaid, *type_ssaid);
                 }
                 crate::ast::nodes::Value::Integer(_) => {
-                    let type_ssaid = bc_ctx.type_name_ids.get(&TypeName::SignedInteger).unwrap();
+                    let type_ssaid = bc_ctx.type_name_ids.get(&TypeName::Integer32).unwrap();
                     bc_ctx.variable_types.insert(*ssaid, *type_ssaid);
                 }
                 _ => (),
@@ -366,6 +381,32 @@ fn check_types(
             debug!("set type {:?} for variable {}", type_id, receiver.0);
         }
 
+        Instruction::AnnotatedAssign(AnnotatedAssignment {
+            reciever,
+            value,
+            type_name_id,
+        }) => {
+            let annotated_type_name = ctx.ir_program.type_names.get(*type_name_id).unwrap();
+            let annotated_type_id = bc_ctx.type_name_ids[annotated_type_name];
+            let value_type_id = bc_ctx.variable_types[value];
+
+            if annotated_type_id != value_type_id && ctx.ir_program.static_values.contains_key(value) {
+                let value_type = bc_ctx.comp_time_types[&value_type_id];
+                match value_type {
+                    Type::Integer(_) | Type::UnsignedInteger(_) => {
+                        bc_ctx.variable_types.insert(*value, annotated_type_id);
+                    }
+                    _ => panic!("can't assign value to to type")
+                }
+            } else {
+                assert!(annotated_type_id == value_type_id);
+            }
+
+            bc_ctx.variable_types.insert(*reciever, annotated_type_id);
+            if bc_ctx.is_projection(value) {
+                bc_ctx.set_variable_as_projected(reciever);
+            };
+        }
         Instruction::Assign(result, value) => {
             if let Some(r#type) = bc_ctx.variable_types.get(value) {
                 bc_ctx.variable_types.insert(*result, *r#type);

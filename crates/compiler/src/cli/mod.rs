@@ -28,21 +28,23 @@ enum SubCommands {
 fn load_std_lib() -> String {
     "
 
-intrinsic fn write_bytes(owned value: ptr, owned destination: ptr, owned length: integer);
-intrinsic fn pointer_from_offset(owned base_pointer: ptr, owned offset: integer) -> ptr;
+intrinsic fn write_bytes(owned value: ptr, owned destination: ptr, owned length: u64);
+intrinsic fn pointer_from_offset(owned base_pointer: ptr, owned offset: i64) -> ptr;
 
 extern fn free(let ptr: ptr);
-extern fn malloc(owned size: integer) -> ptr;        
-extern fn fdopen(owned fd: integer, owned mode: str) -> ptr;
-extern fn fclose(owned fd: str) -> integer;
-extern fn fwrite(owned val: ptr, owned size: integer, owned len: integer, owned file: str) -> integer;
-extern fn sprintf(output: str, format: str, number: integer) -> integer;
-extern fn fflush(owned file: str) -> integer;
-extern fn sleep(time: integer) -> integer;
-fn print(owned val: str, owned len: integer) {
-     let stdoutptr = fdopen(1, \"w\");
-     let res = fwrite(val, len, 1, stdoutptr);
-     let stdoutptrb = fdopen(1, \"w\");
+extern fn malloc(owned size: usize) -> ptr;        
+extern fn fdopen(owned fd: usize, owned mode: str) -> ptr;
+extern fn fclose(owned fd: str) -> usize;
+extern fn fwrite(owned val: ptr, owned size: i32, owned len: usize, owned file: str) -> usize;
+extern fn sprintf(output: str, format: str, number: usize) -> usize;
+extern fn fflush(owned file: str) -> usize;
+extern fn sleep(time: usize) -> usize;
+fn print(owned val: str, owned len: i32) {
+     let std_out: usize= 1
+     let character_size: usize = 1
+     let stdoutptr = fdopen(std_out, \"w\");
+     let res = fwrite(val, len, character_size, stdoutptr);
+     let stdoutptrb = fdopen(std_out, \"w\");
      let resb = fflush(stdoutptrb);
      return;
     }

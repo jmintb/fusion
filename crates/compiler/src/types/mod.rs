@@ -40,11 +40,20 @@ pub enum Type {
     Array(ArrayTypeID),
 }
 
-#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
-pub struct SignedIntegerType(pub usize);
+#[derive(Clone, Debug, Copy, PartialEq, Ord, Eq, PartialOrd)]
+pub enum IntegerBitWidth  {
+    Bit64,
+    Bit32,
+    Bit16,
+    Bit8,
+    PlatformSize
+}
 
 #[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
-pub struct UnsignedIntegerType(pub usize);
+pub struct SignedIntegerType(pub IntegerBitWidth);
+
+#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
+pub struct UnsignedIntegerType(pub IntegerBitWidth);
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub enum TypeID {
@@ -276,7 +285,7 @@ pub fn resolve_types(
                 types.insert(*id, Type::String);
             }
             Expression::Value(Value::Integer(_)) => {
-                types.insert(*id, Type::Integer(SignedIntegerType(32)));
+                //types.insert(*id, Type::Integer(SignedIntegerType(32)));
             }
             _ => (),
         }
