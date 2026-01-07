@@ -1,6 +1,6 @@
 struct Foo {
-  fieldA: integer,
-  fieldB: integer,
+  fieldA: i32,
+  fieldB: i32,
 }
 
 fn main() {

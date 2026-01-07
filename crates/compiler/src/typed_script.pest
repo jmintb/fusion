@@ -1,5 +1,9 @@
 integer = { ASCII_DIGIT+ }
 
+system_bit_width = { "size" }
+
+bit_width = _{ integer | system_bit_width } 
+
 WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
 
 string = { "\""	~ inner ~ "\"" }
@@ -9,7 +13,11 @@ identifier = {
 	( ASCII_ALPHA | "_" )+
 }
 
-assignment = { "let " ~ identifier  ~ "=" ~  expression  }
+assignment = { "let " ~ identifier ~  "=" ~  expression  }
+
+annotation_assignment = { "let " ~ identifier ~ type_annotation ~ "=" ~  expression  }
+
+type_annotation = { ":" ~ type}
 
 assign = { ( structFieldRef | identifier  ) ~ "=" ~ expression }
 
@@ -60,9 +68,9 @@ condition = _{ expression }
 
 array_type = { "[" ~ type ~ ";" ~ integer~ "]"}
 
-signed_integer = { "integer" } 
+signed_integer = { "i" ~  bit_width } 
 
-unsigned_integer = { "u8"  }
+unsigned_integer = { "u" ~ bit_width  }
 
 string_type = { "str" }
 
@@ -114,7 +122,7 @@ functionType = { "fn " | "extern fn " | "projection fn " | "intrinsic fn "} // T
 
 function = {   functionType ~ identifier ~ "(" ~ functionArgs? ~ ")" ~ ("->" ~ type )? ~  ( "{" ~ functionBody ~ "}" | ";") }
 
-stmt = _{  function | struct |( (assignment  | expression  ) ~ ";"? )  }
+stmt = _{  function | struct |( (assignment | annotation_assignment | expression  ) ~ ";"? )  }
 
 structFieldDecl = { identifier ~ ":" ~ type }
 

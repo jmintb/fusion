@@ -19,11 +19,19 @@ impl Identifier {
 pub enum Type {
     String,
     StringLiteral,
-    SignedInteger,
-    UnsignedInteger,
+    Integer8,
+    Integer16,
+    Integer32,
+    Integer64,
+    IntegerSize,
+    UnsignedInteger8,
+    UnsignedInteger16,
+    UnsignedInteger32,
+    UnsignedInteger64,
+    UnsignedIntegerSized,
     Boolean,
     Function,
-    Named(Identifier),
+    Named(Identifier),       // TODO: get rid of string backed identifier.
     Array(Box<Type>, usize), // TODO: get rid of this Box
     Pointer,
     Unit,
@@ -170,6 +178,7 @@ pub enum Expression {
     While(While),
     Assign(Assign),
     Assignment(Assignment),
+    AnnotatedAssignment(AnnotatedAssignment),
     Return(Return),
     Yield(Yield),
     Array(Array),
@@ -320,6 +329,13 @@ pub struct Assignment {
 }
 
 #[derive(Debug, Clone)]
+pub struct AnnotatedAssignment {
+    pub id: Identifier,
+    pub expression: ExpressionID,
+    pub type_annotation: Type,
+}
+
+#[derive(Debug, Clone)]
 pub struct While {
     pub condition: BlockID,
     pub body: BlockID,
@@ -401,4 +417,5 @@ impl Value {
 #[derive(Debug, Clone)]
 pub struct Integer {
     pub(crate) value: isize,
+
 }

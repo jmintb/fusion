@@ -12,6 +12,7 @@ use self::intrinsics::{
     ResultlessIntrinsicCall,
 };
 use crate::analysis::type_evaluation::TypeName;
+use crate::ast;
 use crate::ast::identifiers::{BlockID, ExpressionID, FunctionDeclarationID, StatementID};
 use crate::ast::nodes::{
     AccessModes,
@@ -38,6 +39,7 @@ use crate::ast::nodes::{
 use crate::ast::{Ast, NodeDatabase};
 use crate::control_flow_graph::ControlFlowGraph;
 use crate::types::FlatEntityStore;
+use crate::types::IntegerBitWidth;
 
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Copy, Hash, Default)]
 pub struct Ssaid(pub usize);
@@ -162,6 +164,14 @@ impl Block {
     }
 }
 
+#[derive(Clone, Debug, Copy, PartialEq)]
+pub struct AnnotatedAssignment {
+    pub reciever: Ssaid,
+    pub value: Ssaid,
+    pub type_name_id: usize,
+}
+
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Instruction {
     Addition(Ssaid, Ssaid, Ssaid),
@@ -175,6 +185,7 @@ pub enum Instruction {
         result: Ssaid,
     },
     Assign(Ssaid, Ssaid),
+    AnnotatedAssign(AnnotatedAssignment),
     StructAssign {
         r#struct: Ssaid,
         field_name_index: usize,
@@ -221,9 +232,15 @@ pub enum Instruction {
         field: usize,
         receiver: Ssaid,
     },
+    DeclareUnsignedIntegerType {
+        receiver: Ssaid,
+        type_name_id: usize,
+        bit_width: IntegerBitWidth
+    },
     DeclareIntegerType {
         receiver: Ssaid,
         type_name_id: usize,
+        bit_width: IntegerBitWidth
     },
     DeclareStringType {
         receiver: Ssaid,
@@ -255,6 +272,7 @@ impl Instruction {
     ) -> String {
         match self {
             Self::DeclareIntegerType { .. } => "".to_string(),
+            Self::DeclareUnsignedIntegerType { .. } => "".to_string(),
             Self::DeclareBooleanType { .. } => "".to_string(),
             Self::DeclarePointerType { .. } => "".to_string(),
             Self::DeclareStringType { .. } => "".to_string(),
@@ -428,6 +446,20 @@ impl Instruction {
                     ssa_variables.get(r#struct).unwrap().original_variable.0,
                     reciever.0,
                     ssa_variables.get(reciever).unwrap().original_variable.0
+                )
+            }
+            Self::AnnotatedAssign(AnnotatedAssignment {
+                reciever,
+                value,
+                type_name_id,
+            }) => {
+                format!(
+                    "{}_{}: {} = {}_{}",
+                    reciever.0,
+                    type_name_id,
+                    ssa_variables.get(reciever).unwrap().original_variable.0,
+                    value.0,
+                    ssa_variables.get(value).unwrap().original_variable.0
                 )
             }
             Self::Assign(to, from) => {
@@ -613,7 +645,6 @@ pub struct IrGenerator {
     static_values: HashMap<Ssaid, Value>,
     external_function_declaraitons: Vec<FunctionDeclarationID>,
     expression_types: HashMap<ExpressionID, types::Type>,
-    ssaid_variable_types: BTreeMap<Ssaid, types::Type>,
     type_ssaids: BTreeMap<crate::ast::nodes::Type, Ssaid>,
     struct_field_identifier: Vec<Identifier>,
     type_names: FlatEntityStore<TypeName, usize>,
@@ -652,7 +683,6 @@ impl IrGenerator {
             static_values: HashMap::new(),
             external_function_declaraitons: Vec::new(),
             expression_types,
-            ssaid_variable_types: BTreeMap::new(),
             block_results: BTreeMap::new(),
             type_ssaids: BTreeMap::new(),
             struct_field_identifier: Vec::new(),
@@ -805,20 +835,123 @@ impl IrGenerator {
     // TODO NEXT: We need to have types for each SSAID
 
     fn convert_top_level(&mut self) -> BlockId {
-        let builtin_integer_type = self.add_ssa_variable(Identifier::new("integer".to_string()));
+        let builtin_u8_type = self.add_ssa_variable(Identifier::new("u8".to_string()));
+        let builtin_u16_type = self.add_ssa_variable(Identifier::new("u16".to_string()));
+        let builtin_u32_type = self.add_ssa_variable(Identifier::new("u32".to_string()));
+        let builtin_u64_type = self.add_ssa_variable(Identifier::new("u64".to_string()));
+        let builtin_usize_type = self.add_ssa_variable(Identifier::new("usize".to_string()));
+        let builtin_i8_type = self.add_ssa_variable(Identifier::new("i8".to_string()));
+        let builtin_i16_type = self.add_ssa_variable(Identifier::new("i16".to_string()));
+        let builtin_i32_type = self.add_ssa_variable(Identifier::new("i32".to_string()));
+        let builtin_i64_type = self.add_ssa_variable(Identifier::new("i64".to_string()));
+        let builtin_isize_type = self.add_ssa_variable(Identifier::new("isize".to_string()));
         let builtin_str_type = self.add_ssa_variable(Identifier::new("str".to_string()));
         let builtin_ptr_type = self.add_ssa_variable(Identifier::new("ptr".to_string()));
         let builtin_boolean_type = self.add_ssa_variable(Identifier::new("boolean".to_string()));
 
         let top_level_block = self.add_block();
-        let integer_type_name_id = self.type_names.insert(Type::SignedInteger);
+        
+        let u8_integer_type_name_id = self.type_names.insert(Type::UnsignedInteger8);
         self.add_instruction(
             top_level_block,
             Instruction::DeclareIntegerType {
-                receiver: builtin_integer_type,
-                type_name_id: integer_type_name_id,
+                receiver: builtin_u8_type,
+                type_name_id: u8_integer_type_name_id,
+                bit_width: IntegerBitWidth::Bit8
             },
         );
+        
+        let u16_integer_type_name_id = self.type_names.insert(Type::UnsignedInteger16);
+        self.add_instruction(
+            top_level_block,
+            Instruction::DeclareIntegerType {
+                receiver: builtin_u16_type,
+                type_name_id: u16_integer_type_name_id,
+                bit_width: IntegerBitWidth::Bit16
+            },
+        );
+
+        let u32_integer_type_name_id = self.type_names.insert(Type::UnsignedInteger32);
+        self.add_instruction(
+            top_level_block,
+            Instruction::DeclareIntegerType {
+                receiver: builtin_u32_type,
+                type_name_id: u32_integer_type_name_id,
+                bit_width: IntegerBitWidth::Bit32
+            },
+        );
+        
+        let u64_integer_type_name_id = self.type_names.insert(Type::UnsignedInteger64);
+        self.add_instruction(
+            top_level_block,
+            Instruction::DeclareIntegerType {
+                receiver: builtin_u64_type,
+                type_name_id: u64_integer_type_name_id,
+                bit_width: IntegerBitWidth::Bit64
+            },
+        );
+        
+        let usize_integer_type_name_id = self.type_names.insert(Type::UnsignedIntegerSized);
+        self.add_instruction(
+            top_level_block,
+            Instruction::DeclareIntegerType {
+                receiver: builtin_usize_type,
+                type_name_id: u64_integer_type_name_id,
+                bit_width: IntegerBitWidth::PlatformSize
+            },
+        );
+        
+        let i8_integer_type_name_id = self.type_names.insert(Type::Integer8);
+        self.add_instruction(
+            top_level_block,
+            Instruction::DeclareIntegerType {
+                receiver: builtin_i8_type,
+                type_name_id: i8_integer_type_name_id,
+                bit_width: IntegerBitWidth::Bit8
+            },
+        );
+        
+        let i16_integer_type_name_id = self.type_names.insert(Type::Integer16);
+        self.add_instruction(
+            top_level_block,
+            Instruction::DeclareIntegerType {
+                receiver: builtin_i16_type,
+                type_name_id: i16_integer_type_name_id,
+                bit_width: IntegerBitWidth::Bit16
+            },
+        );
+
+        let i32_integer_type_name_id = self.type_names.insert(Type::Integer32);
+        self.add_instruction(
+            top_level_block,
+            Instruction::DeclareIntegerType {
+                receiver: builtin_i32_type,
+                type_name_id: i32_integer_type_name_id,
+                bit_width: IntegerBitWidth::Bit32
+            },
+        );
+        
+        let i64_integer_type_name_id = self.type_names.insert(Type::Integer64);
+        self.add_instruction(
+            top_level_block,
+            Instruction::DeclareIntegerType {
+                receiver: builtin_i64_type,
+                type_name_id: i64_integer_type_name_id,
+                bit_width: IntegerBitWidth::Bit64
+            },
+        );
+
+
+        let isize_integer_type_name_id = self.type_names.insert(Type::IntegerSize);
+        self.add_instruction(
+            top_level_block,
+            Instruction::DeclareIntegerType {
+                receiver: builtin_isize_type,
+                type_name_id: isize_integer_type_name_id,
+                bit_width: IntegerBitWidth::PlatformSize
+            },
+        );
+
 
         let string_type_name_id = self.type_names.insert(Type::String);
         self.add_instruction(
@@ -960,9 +1093,34 @@ impl IrGenerator {
 
         let ssa_id = self.add_ssa_variable(assignment.id);
         let assign_instruction = Instruction::Assign(ssa_id, result_id);
-        if let Some(r#type) = self.ssaid_variable_types.get(&result_id) {
-            self.set_ssaid_type(ssa_id, *r#type);
-        }
+        self.add_instruction(updated_block_id, assign_instruction);
+        self.add_instruction(updated_block_id, self.get_access_instruction(result_id));
+        updated_block_id
+    }
+
+    fn convert_annotated_assignment(
+        &mut self,
+        assignment: ast::nodes::AnnotatedAssignment,
+        current_block: BlockId,
+    ) -> BlockId {
+        let (updated_block_id, Some(result_id)) =
+            self.convert_expression(assignment.expression, current_block)
+        else {
+            panic!(
+                "Expected a result from expression {:?}",
+                self.node_db.expressions.get(&assignment.expression)
+            );
+        };
+
+        let type_name_id = self.type_names.insert(assignment.type_annotation);
+
+        let ssa_id = self.add_ssa_variable(assignment.id);
+        let assign_instruction = Instruction::AnnotatedAssign(AnnotatedAssignment {
+            reciever: ssa_id,
+            value: result_id,
+            type_name_id,
+        });
+
         self.add_instruction(updated_block_id, assign_instruction);
         self.add_instruction(updated_block_id, self.get_access_instruction(result_id));
         updated_block_id
@@ -1150,6 +1308,10 @@ impl IrGenerator {
             }
             Expression::Assignment(assignment_ment) => {
                 current_block = self.convert_assignment(assignment_ment, current_block);
+            }
+            Expression::AnnotatedAssignment(annotated_assignment) => {
+                current_block =
+                    self.convert_annotated_assignment(annotated_assignment, current_block);
             }
             Expression::Call(Call {
                 function_id,
@@ -1366,7 +1528,6 @@ impl IrGenerator {
                     let ssa_var = self.declare_static_value(
                         val,
                         current_block,
-                        *self.expression_types.get(&expression_id).unwrap(),
                     );
                     return (current_block, Some(ssa_var));
                 }
@@ -1528,10 +1689,6 @@ impl IrGenerator {
                             let ssa_id = self
                                 .add_ssa_variable(Identifier::new("@addition_result".to_string()));
                             let assign_instruction = Instruction::Addition(lhs_id, rhs_id, ssa_id);
-                            self.set_ssaid_type(
-                                ssa_id,
-                                types::Type::Integer(types::SignedIntegerType(32)),
-                            );
                             self.add_instruction(current_block, assign_instruction);
                             self.add_instruction(
                                 current_block,
@@ -1550,10 +1707,6 @@ impl IrGenerator {
                             ));
                             let assign_instruction =
                                 Instruction::Subtraction(lhs_id, rhs_id, ssa_id);
-                            self.set_ssaid_type(
-                                ssa_id,
-                                types::Type::Integer(types::SignedIntegerType(32)),
-                            );
                             self.add_instruction(current_block, assign_instruction);
                             self.add_instruction(
                                 current_block,
@@ -1572,7 +1725,6 @@ impl IrGenerator {
                             ));
                             let assign_instruction =
                                 Instruction::GreaterThan(lhs_id, rhs_id, ssa_id);
-                            self.set_ssaid_type(ssa_id, types::Type::Boolean);
                             self.add_instruction(current_block, assign_instruction);
                             self.add_instruction(
                                 current_block,
@@ -1589,7 +1741,6 @@ impl IrGenerator {
                             let ssa_id = self
                                 .add_ssa_variable(Identifier::new("@less_than_result".to_string()));
                             let assign_instruction = Instruction::LessThan(lhs_id, rhs_id, ssa_id);
-                            self.set_ssaid_type(ssa_id, types::Type::Boolean);
                             self.add_instruction(current_block, assign_instruction);
                             self.add_instruction(
                                 current_block,
@@ -1714,18 +1865,12 @@ impl IrGenerator {
         &mut self,
         val: Value,
         current_block: BlockId,
-        expression_type: types::Type,
     ) -> Ssaid {
         let static_ssa_id = self.add_ssa_variable(Identifier("anonymous".to_string()));
         self.static_values.insert(static_ssa_id, val);
-        self.set_ssaid_type(static_ssa_id, expression_type);
         self.add_instruction(current_block, Instruction::AnonymousValue(static_ssa_id));
 
         static_ssa_id
-    }
-
-    fn set_ssaid_type(&mut self, ssaid: Ssaid, r#type: types::Type) {
-        self.ssaid_variable_types.insert(ssaid, r#type);
     }
 }
 

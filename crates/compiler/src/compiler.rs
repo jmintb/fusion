@@ -8,7 +8,8 @@ use crate::ast::identifiers::ScopeID;
 use crate::ast::parser::parse;
 use crate::ast::scopes::build_program_scopes;
 use crate::backend::mlir::codegen::{generate_mlir, MlirGenerationConfig};
-use crate::cli::{load_program, load_program_without_std_lib};
+use crate::cli::load_program_without_std_lib;
+use crate::cli::load_program;
 use crate::ir::{IrGenerator, IrProgram};
 use crate::types::resolve_types;
 

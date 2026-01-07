@@ -2,7 +2,7 @@
 source: crates/compiler/src/ir/mod.rs
 expression: "format!(\"{}\", control_flow_graph)"
 ---
-entry point: block_22
-block_22 -> [block_27, ]
-block_27 -> [block_30, block_34, ]
-block_30 -> [block_27, ]
+entry point: block_31
+block_31 -> [block_36, ]
+block_36 -> [block_39, block_43, ]
+block_39 -> [block_36, ]
