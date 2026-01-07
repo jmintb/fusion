@@ -566,7 +566,6 @@ fn parse_annotated_assignment(
     Ok(assignment)
 }
 
-
 fn parse_string(string: Pair<Rule>) -> Result<Value> {
     if let Rule::string = string.as_rule() {
         Ok(Value::String(string.into_inner().as_str().to_string()))
