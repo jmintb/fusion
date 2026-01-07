@@ -388,6 +388,9 @@ fn check_types(
             let annotated_type_id = bc_ctx.type_name_ids[annotated_type_name];
             let value_type_id = bc_ctx.variable_types[value];
 
+            // For built in Integer types the annotated type is applied to
+            // the initial value. Otherwise the default i32 would be used 
+            // and the types would conflict. This matches Rust's behavior.
             if annotated_type_id != value_type_id
                 && ctx.ir_program.static_values.contains_key(value)
             {
