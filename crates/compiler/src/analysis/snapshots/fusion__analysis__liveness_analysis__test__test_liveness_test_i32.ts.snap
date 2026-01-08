@@ -399,7 +399,7 @@ Ok(
             },
         },
         FunctionDeclarationID(
-            59,
+            53,
         ): VariableLiveness {
             variables: {
                 Ssaid(
@@ -497,16 +497,16 @@ Ok(
                 ): AbstractAddressRange {
                     start_address: AbstractAddress {
                         block_id: BlockId(
-                            43,
+                            32,
                         ),
-                        inststruction: 1,
+                        inststruction: 15,
                     },
                     end_addresses: [
                         AbstractAddress {
                             block_id: BlockId(
-                                43,
+                                32,
                             ),
-                            inststruction: 1,
+                            inststruction: 15,
                         },
                     ],
                 },
@@ -533,16 +533,16 @@ Ok(
                 ): AbstractAddressRange {
                     start_address: AbstractAddress {
                         block_id: BlockId(
-                            43,
+                            32,
                         ),
-                        inststruction: 2,
+                        inststruction: 16,
                     },
                     end_addresses: [
                         AbstractAddress {
                             block_id: BlockId(
-                                43,
+                                32,
                             ),
-                            inststruction: 2,
+                            inststruction: 16,
                         },
                     ],
                 },
@@ -587,7 +587,7 @@ Ok(
                     38,
                 ): {
                     BlockId(
-                        43,
+                        32,
                     ),
                 },
                 Ssaid(
@@ -601,7 +601,7 @@ Ok(
                     40,
                 ): {
                     BlockId(
-                        43,
+                        32,
                     ),
                 },
             },

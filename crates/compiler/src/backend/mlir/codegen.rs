@@ -40,6 +40,7 @@ use crate::analysis::type_evaluation::IrProgramTypes;
 use crate::ast::identifiers::FunctionDeclarationID;
 use crate::ast::nodes;
 use crate::ast::nodes::FunctionKeyword;
+use crate::backend::mlir::binary_operations::generate_binary_operation_operation;
 use crate::backend::mlir::intrinsics::{
     generate_intrinsic_call,
     generate_resultless_intrinsic_call,
@@ -1564,6 +1565,18 @@ impl<'ctx> CodeGen<'ctx> {
 
                 current_block.append_operation(store_op);
 
+                Some(ptr_val)
+            }
+
+            Instruction::Equality(bo) => {
+                generate_binary_operation_operation(
+                    bo,
+                    self,
+                    MlirBlockId(current_block_id),
+                    block_references,
+                    variable_store,
+                )?;
+                let ptr_val = variable_store[&bo.reciever];
                 Some(ptr_val)
             }
 

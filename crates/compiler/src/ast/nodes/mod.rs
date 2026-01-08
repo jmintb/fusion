@@ -367,7 +367,7 @@ impl Operation {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Copy)]
 pub enum Operator {
     Addition,
     Subtraction,
@@ -390,6 +390,8 @@ impl Operator {
             Self::Division => String::from("/"),
             Self::LessThan => String::from("<"),
             Self::GreaterThan => String::from(">"),
+            Self::Equality => String::from("="),
+            Self::Inequality => String::from("!="),
             _ => todo!("implement debug string for operation {:?}", self),
         }
     }

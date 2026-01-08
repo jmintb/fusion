@@ -7,6 +7,7 @@ use tracing::debug;
 use super::ir_transformer::{IrInterpreter, TransformContext};
 use crate::ast::identifiers::FunctionDeclarationID;
 use crate::control_flow_graph::ControlFlowGraph;
+use crate::ir::binary_operations::BinaryOperation;
 use crate::ir::intrinsics::ResultfullIntrinsicCall;
 use crate::ir::{AnnotatedAssignment, BlockId, Instruction, IrProgram, Ssaid};
 use crate::types::{ArrayTypeID, FlatEntityStore, StructTypeID, Type};
@@ -202,6 +203,19 @@ fn check_types(
 
             let type_ssaid = bc_ctx.type_name_ids.get(&TypeName::Boolean).unwrap();
             bc_ctx.variable_types.insert(*receiver, *type_ssaid);
+        }
+        Instruction::Equality(BinaryOperation {
+            left_hand_side,
+            right_hand_side,
+            reciever,
+            ..
+        }) => {
+            let lhs_type_ssaid = bc_ctx.variable_types.get(left_hand_side).unwrap();
+            let rhs_type_ssaid = bc_ctx.variable_types.get(right_hand_side).unwrap();
+            assert!(lhs_type_ssaid == rhs_type_ssaid);
+
+            let type_ssaid = bc_ctx.type_name_ids.get(&TypeName::Boolean).unwrap();
+            bc_ctx.variable_types.insert(*reciever, *type_ssaid);
         }
         Instruction::GreaterThan(lhs, rhs, receiver) => {
             let lhs_type_ssaid = bc_ctx.variable_types.get(lhs).unwrap();
