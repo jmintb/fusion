@@ -1,8 +1,10 @@
+pub mod binary_operations;
 pub mod intrinsics;
 
 use std::collections::{BTreeMap, HashMap};
 use std::fmt::Display;
 
+use binary_operations::BinaryOperation;
 use tracing::debug;
 
 use self::intrinsics::{
@@ -175,6 +177,7 @@ pub enum Instruction {
     Addition(Ssaid, Ssaid, Ssaid),
     Subtraction(Ssaid, Ssaid, Ssaid),
     GreaterThan(Ssaid, Ssaid, Ssaid),
+    Equality(BinaryOperation),
     LessThan(Ssaid, Ssaid, Ssaid),
     InitArray(Vec<Ssaid>, Ssaid, Ssaid),
     ArrayLookup {
@@ -422,6 +425,31 @@ impl Instruction {
                     ssa_variables.get(lhs).unwrap().original_variable.0,
                     rhs.0,
                     ssa_variables.get(rhs).unwrap().original_variable.0
+                )
+            }
+            Self::Equality(BinaryOperation {
+                left_hand_side,
+                right_hand_side,
+                reciever,
+                operation_id,
+            }) => {
+                format!(
+                    "{}_{} = {}_{} {} {}_{}",
+                    reciever.0,
+                    ssa_variables.get(reciever).unwrap().original_variable.0,
+                    left_hand_side.0,
+                    ssa_variables
+                        .get(left_hand_side)
+                        .unwrap()
+                        .original_variable
+                        .0,
+                    operation_id.to_debug_string(),
+                    right_hand_side.0,
+                    ssa_variables
+                        .get(right_hand_side)
+                        .unwrap()
+                        .original_variable
+                        .0
                 )
             }
             Self::LessThan(lhs, rhs, result) => {
@@ -1726,6 +1754,27 @@ impl IrGenerator {
                             let ssa_id = self
                                 .add_ssa_variable(Identifier::new("@less_than_result".to_string()));
                             let assign_instruction = Instruction::LessThan(lhs_id, rhs_id, ssa_id);
+                            self.add_instruction(current_block, assign_instruction);
+                            self.add_instruction(
+                                current_block,
+                                self.get_access_instruction(lhs_id),
+                            );
+                            self.add_instruction(
+                                current_block,
+                                self.get_access_instruction(rhs_id),
+                            );
+
+                            return (current_block, Some(ssa_id));
+                        }
+                        Operator::Equality | Operator::Inequality => {
+                            let ssa_id = self
+                                .add_ssa_variable(Identifier::new("@bin_op_result".to_string()));
+                            let assign_instruction = Instruction::Equality(BinaryOperation {
+                                left_hand_side: lhs_id,
+                                right_hand_side: rhs_id,
+                                reciever: ssa_id,
+                                operation_id: *operator,
+                            });
                             self.add_instruction(current_block, assign_instruction);
                             self.add_instruction(
                                 current_block,

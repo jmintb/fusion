@@ -40,7 +40,7 @@ block_15
 32: move(30_fflush_result)
 33: return
 
-fn 59:
+fn 53:
 block_32
 0: 33_anonymous := Int(2)
 1: 34_21: x = 33_anonymous
@@ -54,24 +54,15 @@ block_32
 9: 38_23: sum = 37_@addition_result
 10: move(37_@addition_result)
 11: 39_anonymous := Int(5)
-12: 40_24: limit = 39_anonymous
+12: 40_24: correct_value = 39_anonymous
 13: move(39_anonymous)
-14: 41_@greater_than_result = 38_sum > 40_limit
+14: 41_@bin_op_result = 38_sum != 40_correct_value
 15: move(38_sum)
-16: move(40_limit)
-17: if 41_@greater_than_result then 42_block
+16: move(40_correct_value)
+17: if 41_@bin_op_result then 42_block
 
 block_42
 0: @34()
 
 block_43
-0: 44_@less_than_result = 38_sum < 40_limit
-1: move(38_sum)
-2: move(40_limit)
-3: if 44_@less_than_result then 45_block
-
-block_45
-0: @34()
-
-block_46
 0: return
