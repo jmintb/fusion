@@ -7,7 +7,6 @@ use tracing::debug;
 use super::ir_transformer::{IrInterpreter, TransformContext};
 use crate::ast::identifiers::FunctionDeclarationID;
 use crate::control_flow_graph::ControlFlowGraph;
-use crate::ir::binary_operations::BinaryOperation;
 use crate::ir::intrinsics::ResultfullIntrinsicCall;
 use crate::ir::{AnnotatedAssignment, BlockId, Instruction, IrProgram, Ssaid};
 use crate::types::{ArrayTypeID, FlatEntityStore, StructTypeID, Type};
@@ -42,7 +41,7 @@ impl IrProgramTypes {
     pub fn lookup_type_name_type(&self, type_name: &TypeName) -> Result<Type> {
         if let TypeName::Unit = type_name {
             return Ok(Type::Unit);
-        }
+        } // TODO: this is a hack
 
         let Some(type_ssaid) = self.type_name_ids.get(type_name) else {
             panic!("{:?}", type_name);
@@ -196,41 +195,11 @@ fn check_types(
             };
             bc_ctx.variable_types.insert(*result_receiver, *type_ssaid);
         }
-        Instruction::LessThan(lhs, rhs, receiver) => {
-            let lhs_type_ssaid = bc_ctx.variable_types.get(lhs).unwrap();
-            let rhs_type_ssaid = bc_ctx.variable_types.get(rhs).unwrap();
-            assert!(lhs_type_ssaid == rhs_type_ssaid);
-
-            let type_ssaid = bc_ctx.type_name_ids.get(&TypeName::Boolean).unwrap();
-            bc_ctx.variable_types.insert(*receiver, *type_ssaid);
-        }
-        Instruction::Equality(BinaryOperation {
-            left_hand_side,
-            right_hand_side,
-            reciever,
-            ..
-        }) => {
-            let lhs_type_ssaid = bc_ctx.variable_types.get(left_hand_side).unwrap();
-            let rhs_type_ssaid = bc_ctx.variable_types.get(right_hand_side).unwrap();
-            assert!(lhs_type_ssaid == rhs_type_ssaid);
-
-            let type_ssaid = bc_ctx.type_name_ids.get(&TypeName::Boolean).unwrap();
-            bc_ctx.variable_types.insert(*reciever, *type_ssaid);
-        }
-        Instruction::GreaterThan(lhs, rhs, receiver) => {
-            let lhs_type_ssaid = bc_ctx.variable_types.get(lhs).unwrap();
-            let rhs_type_ssaid = bc_ctx.variable_types.get(rhs).unwrap();
-            assert!(lhs_type_ssaid == rhs_type_ssaid);
-
-            let type_ssaid = bc_ctx.type_name_ids.get(&TypeName::Boolean).unwrap();
-            bc_ctx.variable_types.insert(*receiver, *type_ssaid);
-        }
-        Instruction::Addition(lhs, rhs, receiver) => {
-            let lhs_type_ssaid = bc_ctx.variable_types.get(lhs).unwrap();
-            let rhs_type_ssaid = bc_ctx.variable_types.get(rhs).unwrap();
-            assert!(lhs_type_ssaid == rhs_type_ssaid);
-
-            bc_ctx.variable_types.insert(*receiver, *lhs_type_ssaid);
+        Instruction::BinaryOperation(binary_operation) => {
+            let result_type_id = binary_operation.result_type_id(bc_ctx)?;
+            bc_ctx
+                .variable_types
+                .insert(binary_operation.reciever, result_type_id);
         }
         Instruction::AssignFnArg(receiver, _, type_name_id) => {
             let type_name = ctx.ir_program.type_names.get(*type_name_id).unwrap();
@@ -416,7 +385,12 @@ fn check_types(
                     _ => panic!("can't assign value to to type"),
                 }
             } else {
-                assert!(annotated_type_id == value_type_id);
+                assert!(
+                    annotated_type_id == value_type_id,
+                    "lhs: {:?}, rhs: {:?}",
+                    bc_ctx.comp_time_types[&annotated_type_id],
+                    bc_ctx.comp_time_types[&value_type_id]
+                );
             }
 
             bc_ctx.variable_types.insert(*reciever, annotated_type_id);

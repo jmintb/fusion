@@ -48,10 +48,10 @@ block_32
 3: move(33_anonymous)
 4: 35_anonymous := Int(1)
 5: 36_anonymous := Int(0)
-6: 37_@greater_than_result = 35_anonymous > 36_anonymous
+6: 37_@bin_op_result = 35_anonymous > 36_anonymous
 7: move(35_anonymous)
 8: move(36_anonymous)
-9: if 37_@greater_than_result then 38_block else 41_block
+9: if 37_@bin_op_result then 38_block else 41_block
 
 block_38
 0: 39_anon = Project<34_test>

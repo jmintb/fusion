@@ -6,7 +6,7 @@ use anyhow::{bail, Result};
 use melior::dialect::func::{self};
 use melior::dialect::llvm::attributes::Linkage;
 use melior::dialect::llvm::{self};
-use melior::dialect::{arith, scf, DialectRegistry};
+use melior::dialect::{scf, DialectRegistry};
 use melior::ir::attribute::{
     DenseI64ArrayAttribute,
     FlatSymbolRefAttribute,
@@ -52,12 +52,6 @@ pub struct MlirGenerationConfig {
     pub program: IrProgram,
     pub verify_mlir: bool,
     pub program_types: BTreeMap<FunctionDeclarationID, IrProgramTypes>,
-}
-
-struct ArithOperationVaribles {
-    left_hand_side: Ssaid,
-    right_hand_side: Ssaid,
-    reciever: Ssaid,
 }
 
 // TODO: Figure out how we can share the module generation code without dropping references.
@@ -233,8 +227,8 @@ pub struct CodeGen<'ctx> {
     pub context: &'ctx Context,
     module: &'ctx Module<'ctx>,
     annon_string_counter: RefCell<usize>,
-    program: IrProgram,
-    program_types: BTreeMap<FunctionDeclarationID, IrProgramTypes>,
+    pub program: IrProgram,
+    pub program_types: BTreeMap<FunctionDeclarationID, IrProgramTypes>,
     current_fn_decl_id: FunctionDeclarationID,
 }
 
@@ -578,6 +572,10 @@ impl<'ctx> CodeGen<'ctx> {
         }
 
         locals
+    }
+
+    pub fn current_fn_types(&self) -> &IrProgramTypes {
+        &self.program_types[&self.current_fn_decl_id]
     }
 
     fn gen_function(
@@ -1280,52 +1278,6 @@ impl<'ctx> CodeGen<'ctx> {
         ))
     }
 
-    fn generate_arith_comparion<'context, 'region>(
-        &self,
-        operation_variables: ArithOperationVaribles,
-        predicate: arith::CmpiPredicate,
-        block_references: &HashMap<usize, BlockRef<'context, 'region>>,
-        variable_store: &HashMap<Ssaid, Value<'context, 'region>>,
-        current_block_id: usize,
-    ) -> Result<()> {
-        let current_block = block_references.get(&current_block_id).unwrap();
-        let location = melior::ir::Location::unknown(self.context);
-        let first_operand_value = self.gen_variable_load(
-            operation_variables.left_hand_side,
-            block_references,
-            variable_store,
-            current_block_id,
-        )?;
-        let second_operand_value = self.gen_variable_load(
-            operation_variables.right_hand_side,
-            block_references,
-            variable_store,
-            current_block_id,
-        )?;
-        let operation = melior::dialect::arith::cmpi(
-            self.context,
-            predicate,
-            first_operand_value,
-            second_operand_value,
-            location,
-        );
-
-        let value = current_block.append_operation(operation).result(0)?;
-
-        let ptr_val = variable_store[&operation_variables.reciever];
-        let store_op = melior::dialect::llvm::store(
-            self.context,
-            value.into(),
-            ptr_val,
-            melior::ir::Location::unknown(self.context),
-            Default::default(),
-        );
-
-        current_block.append_operation(store_op);
-
-        Ok(())
-    }
-
     fn gen_instruction<'parent_block, 'parent_context, 'context, 'this, 'blocks, 'vars, 'varc>(
         &self,
         instruction: &Instruction,
@@ -1532,43 +1484,8 @@ impl<'ctx> CodeGen<'ctx> {
                 ));
                 None
             }
-            Instruction::Addition(lhs, rhs, result_reciever) => {
-                let first_operand_value = self.gen_variable_load(
-                    *lhs,
-                    block_references,
-                    variable_store,
-                    current_block_id,
-                )?;
-                let second_operand_value = self.gen_variable_load(
-                    *rhs,
-                    block_references,
-                    variable_store,
-                    current_block_id,
-                )?;
-                let operation = melior::dialect::arith::addi(
-                    first_operand_value,
-                    second_operand_value,
-                    location,
-                );
 
-                let value = current_block.append_operation(operation).result(0)?;
-
-                let ptr_val = variable_store[result_reciever];
-
-                let store_op = melior::dialect::llvm::store(
-                    self.context,
-                    value.into(),
-                    ptr_val,
-                    melior::ir::Location::unknown(self.context),
-                    Default::default(),
-                );
-
-                current_block.append_operation(store_op);
-
-                Some(ptr_val)
-            }
-
-            Instruction::Equality(bo) => {
+            Instruction::BinaryOperation(bo) => {
                 generate_binary_operation_operation(
                     bo,
                     self,
@@ -1577,42 +1494,6 @@ impl<'ctx> CodeGen<'ctx> {
                     variable_store,
                 )?;
                 let ptr_val = variable_store[&bo.reciever];
-                Some(ptr_val)
-            }
-
-            Instruction::GreaterThan(lhs, rhs, result_reciever) => {
-                let operation_variables = ArithOperationVaribles {
-                    left_hand_side: *lhs,
-                    right_hand_side: *rhs,
-                    reciever: *result_reciever,
-                };
-
-                self.generate_arith_comparion(
-                    operation_variables,
-                    arith::CmpiPredicate::Sgt,
-                    block_references,
-                    variable_store,
-                    current_block_id,
-                )?;
-                let ptr_val = variable_store[result_reciever];
-                Some(ptr_val)
-            }
-
-            Instruction::LessThan(lhs, rhs, result_reciever) => {
-                let operation_variables = ArithOperationVaribles {
-                    left_hand_side: *lhs,
-                    right_hand_side: *rhs,
-                    reciever: *result_reciever,
-                };
-
-                self.generate_arith_comparion(
-                    operation_variables,
-                    arith::CmpiPredicate::Slt,
-                    block_references,
-                    variable_store,
-                    current_block_id,
-                )?;
-                let ptr_val = variable_store[result_reciever];
                 Some(ptr_val)
             }
             Instruction::IfElse(condition, then_block, else_block) => {

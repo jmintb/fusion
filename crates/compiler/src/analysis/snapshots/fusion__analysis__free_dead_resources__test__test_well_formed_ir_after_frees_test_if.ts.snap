@@ -47,10 +47,10 @@ block_32
 2: move(33_anonymous)
 3: 35_anonymous := Int(1)
 4: 36_anonymous := Int(0)
-5: 37_@less_than_result = 35_anonymous < 36_anonymous
+5: 37_@bin_op_result = 35_anonymous < 36_anonymous
 6: move(35_anonymous)
 7: move(36_anonymous)
-8: if 37_@less_than_result then 38_block
+8: if 37_@bin_op_result then 38_block
 
 block_38
 0: move(34_test)
