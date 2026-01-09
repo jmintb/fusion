@@ -46,27 +46,27 @@ block_32
 3: 35_anonymous := Int(3)
 4: 36_22: y = 35_anonymous
 5: move(35_anonymous)
-6: 37_@addition_result = 34_x + 36_y
+6: 37_@bin_op_result = 34_x + 36_y
 7: move(34_x)
 8: move(36_y)
-9: 38_23: sum = 37_@addition_result
-10: move(37_@addition_result)
+9: 38_23: sum = 37_@bin_op_result
+10: move(37_@bin_op_result)
 11: 39_anonymous := Int(5)
 12: 40_24: limit = 39_anonymous
 13: move(39_anonymous)
-14: 41_@greater_than_result = 38_sum > 40_limit
+14: 41_@bin_op_result = 38_sum > 40_limit
 15: move(38_sum)
 16: move(40_limit)
-17: if 41_@greater_than_result then 42_block
+17: if 41_@bin_op_result then 42_block
 
 block_42
 0: @34()
 
 block_43
-0: 44_@less_than_result = 38_sum < 40_limit
+0: 44_@bin_op_result = 38_sum < 40_limit
 1: move(38_sum)
 2: move(40_limit)
-3: if 44_@less_than_result then 45_block
+3: if 44_@bin_op_result then 45_block
 
 block_45
 0: @34()

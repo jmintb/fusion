@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
 use anyhow::Result;
-use melior::dialect::arith;
+use melior::dialect::arith::{self};
 use melior::ir::{BlockRef, Value};
 
 use crate::ast::nodes::Operator;
 use crate::backend::mlir::codegen::{CodeGen, MlirBlockId};
-use crate::ir::binary_operations::BinaryOperation;
+use crate::ir::binary_operations::{BinaryOperation, Signage};
 use crate::ir::Ssaid;
 
 pub fn generate_binary_operation_operation(
@@ -29,6 +29,8 @@ pub fn generate_binary_operation_operation(
         current_mlir_block.0,
     )?;
 
+    let signage = binary_operation.signage(code_gen_context.current_fn_types())?;
+
     let operation = match binary_operation.operation_id {
         Operator::Inequality => melior::dialect::arith::cmpi(
             code_gen_context.context,
@@ -44,7 +46,94 @@ pub fn generate_binary_operation_operation(
             second_operand_value,
             code_gen_context.unknown_location(),
         ),
-        _ => todo!(),
+        Operator::LessThan => {
+            let predicate = match signage {
+                Signage::Signed => arith::CmpiPredicate::Slt,
+                Signage::Unsigned => arith::CmpiPredicate::Ugt,
+            };
+
+            melior::dialect::arith::cmpi(
+                code_gen_context.context,
+                predicate,
+                first_operand_value,
+                second_operand_value,
+                code_gen_context.unknown_location(),
+            )
+        }
+        Operator::LessThanOrEqual => {
+            let predicate = match signage {
+                Signage::Signed => arith::CmpiPredicate::Sle,
+                Signage::Unsigned => arith::CmpiPredicate::Uge,
+            };
+
+            melior::dialect::arith::cmpi(
+                code_gen_context.context,
+                predicate,
+                first_operand_value,
+                second_operand_value,
+                code_gen_context.unknown_location(),
+            )
+        }
+        Operator::GreaterThanOrEqual => {
+            let predicate = match signage {
+                Signage::Signed => arith::CmpiPredicate::Sge,
+                Signage::Unsigned => arith::CmpiPredicate::Uge,
+            };
+
+            melior::dialect::arith::cmpi(
+                code_gen_context.context,
+                predicate,
+                first_operand_value,
+                second_operand_value,
+                code_gen_context.unknown_location(),
+            )
+        }
+
+        Operator::GreaterThan => {
+            let predicate = match signage {
+                Signage::Signed => arith::CmpiPredicate::Sgt,
+                Signage::Unsigned => arith::CmpiPredicate::Ugt,
+            };
+
+            melior::dialect::arith::cmpi(
+                code_gen_context.context,
+                predicate,
+                first_operand_value,
+                second_operand_value,
+                code_gen_context.unknown_location(),
+            )
+        }
+        Operator::Addition => melior::dialect::arith::addi(
+            first_operand_value,
+            second_operand_value,
+            code_gen_context.unknown_location(),
+        ),
+        Operator::Subtraction => melior::dialect::arith::subi(
+            first_operand_value,
+            second_operand_value,
+            code_gen_context.unknown_location(),
+        ),
+        Operator::Multiplication => melior::dialect::arith::muli(
+            first_operand_value,
+            second_operand_value,
+            code_gen_context.unknown_location(),
+        ),
+        Operator::Division => {
+            match signage {
+                Signage::Signed => melior::dialect::arith::divsi(
+                    // TODO: add some information during type checking to mark if this is signed or not.
+                    first_operand_value,
+                    second_operand_value,
+                    code_gen_context.unknown_location(),
+                ),
+                Signage::Unsigned => melior::dialect::arith::divui(
+                    // TODO: add some information during type checking to mark if this is signed or not.
+                    first_operand_value,
+                    second_operand_value,
+                    code_gen_context.unknown_location(),
+                ),
+            }
+        }
     };
 
     let result = code_gen_context

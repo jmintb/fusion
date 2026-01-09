@@ -113,14 +113,8 @@ fn check_instruction(
 
     match instruction {
         // TODO: Investigate if the result SSA variable is released and borrow checked properly.
-        Instruction::Addition(_, _, result) => {
-            variable_states.insert(*result, VariableState::Ready);
-        }
         Instruction::Project { reciever, .. } => {
             variable_states.insert(*reciever, VariableState::Ready);
-        }
-        Instruction::GreaterThan(_, _, result) => {
-            variable_states.insert(*result, VariableState::Ready);
         }
         Instruction::InitArray(_, result, _) => {
             variable_states.insert(*result, VariableState::Ready);

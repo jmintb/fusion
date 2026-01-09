@@ -29,7 +29,6 @@ use crate::ast::nodes::{
     IfElseStatement,
     IfStatement,
     Operation,
-    Operator,
     Return,
     StructFieldPath,
     StructInit,
@@ -174,11 +173,7 @@ pub struct AnnotatedAssignment {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Instruction {
-    Addition(Ssaid, Ssaid, Ssaid),
-    Subtraction(Ssaid, Ssaid, Ssaid),
-    GreaterThan(Ssaid, Ssaid, Ssaid),
-    Equality(BinaryOperation),
-    LessThan(Ssaid, Ssaid, Ssaid),
+    BinaryOperation(BinaryOperation),
     InitArray(Vec<Ssaid>, Ssaid, Ssaid),
     ArrayLookup {
         array: Ssaid,
@@ -393,41 +388,8 @@ impl Instruction {
                     then_block.0,
                 )
             }
-            Self::Addition(lhs, rhs, result) => {
-                format!(
-                    "{}_{} = {}_{} + {}_{}",
-                    result.0,
-                    ssa_variables.get(result).unwrap().original_variable.0,
-                    lhs.0,
-                    ssa_variables.get(lhs).unwrap().original_variable.0,
-                    rhs.0,
-                    ssa_variables.get(rhs).unwrap().original_variable.0
-                )
-            }
-            Self::Subtraction(lhs, rhs, result) => {
-                format!(
-                    "{}_{} = {}_{} - {}_{}",
-                    result.0,
-                    ssa_variables.get(result).unwrap().original_variable.0,
-                    lhs.0,
-                    ssa_variables.get(lhs).unwrap().original_variable.0,
-                    rhs.0,
-                    ssa_variables.get(rhs).unwrap().original_variable.0
-                )
-            }
 
-            Self::GreaterThan(lhs, rhs, result) => {
-                format!(
-                    "{}_{} = {}_{} > {}_{}",
-                    result.0,
-                    ssa_variables.get(result).unwrap().original_variable.0,
-                    lhs.0,
-                    ssa_variables.get(lhs).unwrap().original_variable.0,
-                    rhs.0,
-                    ssa_variables.get(rhs).unwrap().original_variable.0
-                )
-            }
-            Self::Equality(BinaryOperation {
+            Self::BinaryOperation(BinaryOperation {
                 left_hand_side,
                 right_hand_side,
                 reciever,
@@ -450,17 +412,6 @@ impl Instruction {
                         .unwrap()
                         .original_variable
                         .0
-                )
-            }
-            Self::LessThan(lhs, rhs, result) => {
-                format!(
-                    "{}_{} = {}_{} < {}_{}",
-                    result.0,
-                    ssa_variables.get(result).unwrap().original_variable.0,
-                    lhs.0,
-                    ssa_variables.get(lhs).unwrap().original_variable.0,
-                    rhs.0,
-                    ssa_variables.get(rhs).unwrap().original_variable.0
                 )
             }
             Self::StructAssign {
@@ -1697,98 +1648,19 @@ impl IrGenerator {
                         panic!("right hand side expression did not produce an id, from operation: {:?}", operation.clone())
                     };
 
-                    match operator {
-                        Operator::Addition => {
-                            let ssa_id = self
-                                .add_ssa_variable(Identifier::new("@addition_result".to_string()));
-                            let assign_instruction = Instruction::Addition(lhs_id, rhs_id, ssa_id);
-                            self.add_instruction(current_block, assign_instruction);
-                            self.add_instruction(
-                                current_block,
-                                self.get_access_instruction(lhs_id),
-                            );
-                            self.add_instruction(
-                                current_block,
-                                self.get_access_instruction(rhs_id),
-                            );
+                    let ssa_id =
+                        self.add_ssa_variable(Identifier::new("@bin_op_result".to_string()));
+                    let assign_instruction = Instruction::BinaryOperation(BinaryOperation {
+                        left_hand_side: lhs_id,
+                        right_hand_side: rhs_id,
+                        reciever: ssa_id,
+                        operation_id: *operator,
+                    });
+                    self.add_instruction(current_block, assign_instruction);
+                    self.add_instruction(current_block, self.get_access_instruction(lhs_id));
+                    self.add_instruction(current_block, self.get_access_instruction(rhs_id));
 
-                            return (current_block, Some(ssa_id));
-                        }
-                        Operator::Subtraction => {
-                            let ssa_id = self.add_ssa_variable(Identifier::new(
-                                "@Subtraction_result".to_string(),
-                            ));
-                            let assign_instruction =
-                                Instruction::Subtraction(lhs_id, rhs_id, ssa_id);
-                            self.add_instruction(current_block, assign_instruction);
-                            self.add_instruction(
-                                current_block,
-                                self.get_access_instruction(lhs_id),
-                            );
-                            self.add_instruction(
-                                current_block,
-                                self.get_access_instruction(rhs_id),
-                            );
-
-                            return (current_block, Some(ssa_id));
-                        }
-                        Operator::GreaterThan => {
-                            let ssa_id = self.add_ssa_variable(Identifier::new(
-                                "@greater_than_result".to_string(),
-                            ));
-                            let assign_instruction =
-                                Instruction::GreaterThan(lhs_id, rhs_id, ssa_id);
-                            self.add_instruction(current_block, assign_instruction);
-                            self.add_instruction(
-                                current_block,
-                                self.get_access_instruction(lhs_id),
-                            );
-                            self.add_instruction(
-                                current_block,
-                                self.get_access_instruction(rhs_id),
-                            );
-
-                            return (current_block, Some(ssa_id));
-                        }
-                        Operator::LessThan => {
-                            let ssa_id = self
-                                .add_ssa_variable(Identifier::new("@less_than_result".to_string()));
-                            let assign_instruction = Instruction::LessThan(lhs_id, rhs_id, ssa_id);
-                            self.add_instruction(current_block, assign_instruction);
-                            self.add_instruction(
-                                current_block,
-                                self.get_access_instruction(lhs_id),
-                            );
-                            self.add_instruction(
-                                current_block,
-                                self.get_access_instruction(rhs_id),
-                            );
-
-                            return (current_block, Some(ssa_id));
-                        }
-                        Operator::Equality | Operator::Inequality => {
-                            let ssa_id = self
-                                .add_ssa_variable(Identifier::new("@bin_op_result".to_string()));
-                            let assign_instruction = Instruction::Equality(BinaryOperation {
-                                left_hand_side: lhs_id,
-                                right_hand_side: rhs_id,
-                                reciever: ssa_id,
-                                operation_id: *operator,
-                            });
-                            self.add_instruction(current_block, assign_instruction);
-                            self.add_instruction(
-                                current_block,
-                                self.get_access_instruction(lhs_id),
-                            );
-                            self.add_instruction(
-                                current_block,
-                                self.get_access_instruction(rhs_id),
-                            );
-
-                            return (current_block, Some(ssa_id));
-                        }
-                        _ => panic!("operator {:?} not support", operator),
-                    }
+                    return (current_block, Some(ssa_id));
                 }
             },
 

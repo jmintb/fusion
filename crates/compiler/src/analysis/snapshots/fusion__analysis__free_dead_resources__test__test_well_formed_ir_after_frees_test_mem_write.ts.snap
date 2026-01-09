@@ -100,11 +100,11 @@ block_56
 3: struct_field_read_resul_Ssaid(59) = Ssaid(57)_FieldRead.8
 4: 60_string_offset = 59_struct_field_result
 5: move(59_struct_field_result)
-6: 61_@addition_result = 60_string_offset + 58_length
+6: 61_@bin_op_result = 60_string_offset + 58_length
 7: move(60_string_offset)
 8: move(58_length)
-9: 62_new_offset = 61_@addition_result
-10: move(61_@addition_result)
+9: 62_new_offset = 61_@bin_op_result
+10: move(61_@bin_op_result)
 11: 57_allocator.some_field = 62_new_offset
 12: move(62_new_offset)
 13: return 60

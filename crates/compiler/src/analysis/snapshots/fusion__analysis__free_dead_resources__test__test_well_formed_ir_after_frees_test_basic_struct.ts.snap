@@ -54,16 +54,16 @@ block_33
 9: move(38_struct_init_result)
 10: struct_field_read_resul_Ssaid(40) = Ssaid(39)_FieldRead.2
 11: struct_field_read_resul_Ssaid(41) = Ssaid(39)_FieldRead.3
-12: 42_@addition_result = 40_struct_field_result + 41_struct_field_result
+12: 42_@bin_op_result = 40_struct_field_result + 41_struct_field_result
 13: move(40_struct_field_result)
 14: move(41_struct_field_result)
-15: 43_sum = 42_@addition_result
-16: move(42_@addition_result)
+15: 43_sum = 42_@bin_op_result
+16: move(42_@bin_op_result)
 17: 44_anonymous := Int(59)
-18: 45_@greater_than_result = 43_sum > 44_anonymous
+18: 45_@bin_op_result = 43_sum > 44_anonymous
 19: move(43_sum)
 20: move(44_anonymous)
-21: if 45_@greater_than_result then 46_block
+21: if 45_@bin_op_result then 46_block
 
 block_46
 0: 47_anonymous := "struct fields sum is 6"

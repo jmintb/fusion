@@ -50,7 +50,7 @@ block_32
 
 block_37
 0: 38_anonymous := Int(2)
-1: 39_@less_than_result = 36_i < 38_anonymous
+1: 39_@bin_op_result = 36_i < 38_anonymous
 2: move(36_i)
 3: move(38_anonymous)
 
@@ -59,11 +59,11 @@ block_40
 1: move(41_anon)
 2: @60( 41_anon,)
 3: 42_anonymous := Int(1)
-4: 43_@addition_result = 36_i + 42_anonymous
+4: 43_@bin_op_result = 36_i + 42_anonymous
 5: move(36_i)
 6: move(42_anonymous)
-7: 36_i = 43_@addition_result
-8: move(43_@addition_result)
+7: 36_i = 43_@bin_op_result
+8: move(43_@bin_op_result)
 
 block_44
 0: move(34_test)
