@@ -4,86 +4,86 @@ expression: "format!(\"{}\", ir_progam)"
 ---
 IR:
 fn 33:
-block_15
-0: 16_val = fnarg
-1: 17_len = fnarg
-2: 18_anonymous := Int(1)
-3: 19_15: std_out = 18_anonymous
-4: move(18_anonymous)
-5: 20_anonymous := Int(1)
-6: 21_16: character_size = 20_anonymous
-7: move(20_anonymous)
-8: move(19_std_out)
-9: 22_anonymous := "w"
-10: move(22_anonymous)
-11: receiver_Ssaid(23) = @4( 19_std_out, 22_anonymous,)
-12: 24_stdoutptr = 23_fdopen_result
-13: move(23_fdopen_result)
-14: move(16_val)
-15: move(17_len)
-16: move(21_character_size)
-17: move(24_stdoutptr)
-18: receiver_Ssaid(25) = @6( 16_val, 17_len, 21_character_size, 24_stdoutptr,)
-19: 26_res = 25_fwrite_result
-20: move(25_fwrite_result)
-21: move(19_std_out)
-22: 27_anonymous := "w"
-23: move(27_anonymous)
-24: receiver_Ssaid(28) = @4( 19_std_out, 27_anonymous,)
-25: 29_stdoutptrb = 28_fdopen_result
-26: move(28_fdopen_result)
-27: move(29_stdoutptrb)
-28: receiver_Ssaid(30) = @8( 29_stdoutptrb,)
-29: 31_resb = 30_fflush_result
-30: move(30_fflush_result)
+block_17
+0: 18_val = fnarg
+1: 19_len = fnarg
+2: 20_anonymous := Int(1)
+3: 21_17: std_out = 20_anonymous
+4: move(20_anonymous)
+5: 22_anonymous := Int(1)
+6: 23_18: character_size = 22_anonymous
+7: move(22_anonymous)
+8: move(21_std_out)
+9: 24_anonymous := "w"
+10: move(24_anonymous)
+11: receiver_Ssaid(25) = @4( 21_std_out, 24_anonymous,)
+12: 26_stdoutptr = 25_fdopen_result
+13: move(25_fdopen_result)
+14: move(18_val)
+15: move(19_len)
+16: move(23_character_size)
+17: move(26_stdoutptr)
+18: receiver_Ssaid(27) = @6( 18_val, 19_len, 23_character_size, 26_stdoutptr,)
+19: 28_res = 27_fwrite_result
+20: move(27_fwrite_result)
+21: move(21_std_out)
+22: 29_anonymous := "w"
+23: move(29_anonymous)
+24: receiver_Ssaid(30) = @4( 21_std_out, 29_anonymous,)
+25: 31_stdoutptrb = 30_fdopen_result
+26: move(30_fdopen_result)
+27: move(31_stdoutptrb)
+28: receiver_Ssaid(32) = @8( 31_stdoutptrb,)
+29: 33_resb = 32_fflush_result
+30: move(32_fflush_result)
 31: return
 
 fn 60:
-block_32
-0: 33_anonymous := "test"
-1: 34_val = 33_anonymous
-2: move(33_anonymous)
-3: 35_anonymous := Int(0)
-4: 36_i = 35_anonymous
-5: move(35_anonymous)
-6: 39_anonymous := "hello\n"
-7: 40_anonymous := "world\n"
-8: move(39_anonymous)
-9: move(40_anonymous)
-10: array_init_result_Ssaid(38) = InitArray[ 39_anonymous, 40_anonymous,]
-11: 41_values = 38_@array_init_result
-12: move(38_@array_init_result)
-13: While block_BlockId(42)  { block_BlockId(45) }
+block_34
+0: 35_anonymous := "test"
+1: 36_val = 35_anonymous
+2: move(35_anonymous)
+3: 37_anonymous := Int(0)
+4: 38_i = 37_anonymous
+5: move(37_anonymous)
+6: 41_anonymous := "hello\n"
+7: 42_anonymous := "world\n"
+8: move(41_anonymous)
+9: move(42_anonymous)
+10: array_init_result_Ssaid(40) = InitArray[ 41_anonymous, 42_anonymous,]
+11: 43_values = 40_@array_init_result
+12: move(40_@array_init_result)
+13: While block_BlockId(44)  { block_BlockId(47) }
 
-block_42
-0: 43_anonymous := Int(2)
-1: 44_@bin_op_result = 36_i < 43_anonymous
-2: move(36_i)
-3: move(43_anonymous)
+block_44
+0: 45_anonymous := Int(2)
+1: 46_@bin_op_result = 38_i < 45_anonymous
+2: move(38_i)
+3: move(45_anonymous)
 
-block_45
-0: 46_anon = Project<34_val>
-1: move(46_anon)
-2: @63( 46_anon,)
-3: move(36_i)
-4: move(41_values)
-5: array_lookup_result_Ssaid(47) = ArrayLookup( 41_values, 36_i, 47_@array_lookup_result,)
-6: move(47_@array_lookup_result)
-7: 48_anonymous := Int(6)
-8: move(48_anonymous)
-9: @33( 47_@array_lookup_result, 48_anonymous,)
-10: 49_anonymous := Int(1)
-11: 50_@bin_op_result = 36_i + 49_anonymous
-12: move(36_i)
-13: move(49_anonymous)
-14: 36_i = 50_@bin_op_result
-15: move(50_@bin_op_result)
+block_47
+0: 48_anon = Project<36_val>
+1: move(48_anon)
+2: @63( 48_anon,)
+3: move(38_i)
+4: move(43_values)
+5: array_lookup_result_Ssaid(49) = ArrayLookup( 43_values, 38_i, 49_@array_lookup_result,)
+6: move(49_@array_lookup_result)
+7: 50_anonymous := Int(6)
+8: move(50_anonymous)
+9: @33( 49_@array_lookup_result, 50_anonymous,)
+10: 51_anonymous := Int(1)
+11: 52_@bin_op_result = 38_i + 51_anonymous
+12: move(38_i)
+13: move(51_anonymous)
+14: 38_i = 52_@bin_op_result
+15: move(52_@bin_op_result)
 
-block_51
+block_53
 0: return
 
 fn 63:
-block_52
-0: 53_v = fnarg
-1: 53_v = Project<53_v>
+block_54
+0: 55_v = fnarg
+1: 55_v = Project<55_v>
 2: return

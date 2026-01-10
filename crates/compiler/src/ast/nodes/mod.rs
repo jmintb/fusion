@@ -28,6 +28,8 @@ pub enum Type {
     UnsignedInteger16,
     UnsignedInteger32,
     UnsignedInteger64,
+    Float64,
+    Float32,
     UnsignedIntegerSized,
     Boolean,
     Function,
@@ -402,6 +404,7 @@ pub enum Value {
     String(String),
     Variable(Identifier),
     Integer(Integer),
+    Float(Float),
     Boolean(bool),
 }
 
@@ -411,9 +414,15 @@ impl Value {
             Value::String(text) => format!("\"{text}\""),
             Value::Variable(id) => format!("Variable({})", id.0),
             Value::Integer(value) => format!("Int({})", value.value),
+            Value::Float(value) => format!("Float({})", value.value),
             Value::Boolean(value) => format!("Boolean({})", value),
         }
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct Float {
+    pub(crate) value: f64,
 }
 
 #[derive(Debug, Clone)]

@@ -19,11 +19,11 @@ use super::nodes::{
     Block,
     Call,
     Expression,
+    Float,
     FunctionArg,
     FunctionDeclaration,
     IfElseStatement,
     IfStatement,
-    Integer,
     Operation,
     Operator,
     Return,
@@ -38,7 +38,7 @@ use super::nodes::{
 };
 use super::{Ast, NodeDatabase};
 use crate::ast::identifiers::DeclarationID;
-use crate::ast::nodes::{AccessModes, AnnotatedAssignment, FunctionKeyword, Identifier};
+use crate::ast::nodes::{AccessModes, AnnotatedAssignment, FunctionKeyword, Identifier, Integer};
 
 #[derive(Parser)]
 #[grammar = "typed_script.pest"]
@@ -218,6 +218,7 @@ fn parse_expression(builder: &mut AstBuilder, pair: Pair<Rule>) -> Result<Expres
         Rule::call => Expression::Call(parse_fn_call(builder, pair)?),
         Rule::structInit => Expression::Struct(parse_struct_init(builder, pair)?),
         Rule::integer => Expression::Value(Value::Integer(parse_integer(pair)?)),
+        Rule::float => Expression::Value(Value::Float(parse_float(pair)?)),
         Rule::operation => Expression::Operation(parse_operation(builder, pair)?),
         Rule::boolean => Expression::Value(Value::Boolean(parse_boolean(pair)?)),
         Rule::r#if_else => Expression::Ifelse(parse_if_else(builder, pair)?),
@@ -473,6 +474,15 @@ fn parse_struct_init(builder: &mut AstBuilder, struct_init_pair: Pair<Rule>) -> 
     Ok(call)
 }
 
+fn parse_float(float: Pair<Rule>) -> Result<Float> {
+    if let Rule::float = float.as_rule() {
+        let value = float.as_str().trim().parse()?;
+        Ok(Float { value })
+    } else {
+        bail!("expected string , got {:?}", float.as_rule())
+    }
+}
+
 fn parse_integer(integer: Pair<Rule>) -> Result<Integer> {
     if let Rule::integer = integer.as_rule() {
         let value = integer.as_str().trim().parse()?;
@@ -644,6 +654,20 @@ fn parse_unsigned_integer_type_annotation(pair: Pair<Rule>) -> Result<Type> {
     })
 }
 
+fn parse_float_type_annotation(pair: Pair<Rule>) -> Result<Type> {
+    let mut inner = pair.into_inner();
+
+    let next = inner.next().unwrap();
+    Ok(match next.as_rule() {
+        Rule::integer => match next.as_str().trim() {
+            "64" => Type::Float64,
+            "32" => Type::Float32,
+            _ => todo!(),
+        },
+        e => bail!("expected to find bit width but got {:?}", e),
+    })
+}
+
 fn parse_type(ty: Pair<Rule>) -> Result<Type> {
     let mut inner = ty.into_inner();
 
@@ -651,6 +675,7 @@ fn parse_type(ty: Pair<Rule>) -> Result<Type> {
     Ok(match next.as_rule() {
         Rule::signed_integer => parse_signed_integer_type_annotation(next)?,
         Rule::unsigned_integer => parse_unsigned_integer_type_annotation(next)?,
+        Rule::float_type => parse_float_type_annotation(next)?,
         Rule::array_type => {
             let mut next_inner = next.into_inner();
             let item_type = parse_type(next_inner.next().unwrap())?;

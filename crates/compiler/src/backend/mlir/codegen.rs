@@ -10,6 +10,7 @@ use melior::dialect::{scf, DialectRegistry};
 use melior::ir::attribute::{
     DenseI64ArrayAttribute,
     FlatSymbolRefAttribute,
+    FloatAttribute,
     IntegerAttribute,
     StringAttribute,
     TypeAttribute,
@@ -156,6 +157,12 @@ where
         }
         types::Type::UnsignedInteger(UnsignedIntegerType(types::IntegerBitWidth::PlatformSize)) => {
             IntegerType::new(context, PLATFORM_BIT_WIDTH as u32).into()
+        }
+        types::Type::Float(types::FloatBitWidth::Bit32) => {
+            melior::ir::r#type::Type::float32(context)
+        }
+        types::Type::Float(types::FloatBitWidth::Bit64) => {
+            melior::ir::r#type::Type::float64(context)
         }
         types::Type::Integer(SignedIntegerType(types::IntegerBitWidth::Bit8)) => {
             IntegerType::new(context, 8).into()
@@ -519,20 +526,58 @@ impl<'ctx> CodeGen<'ctx> {
                 };
 
                 match value {
-                    nodes::Value::Integer(int) => {
-                        let integer_val: Value = entry_block
-                            .append_operation(melior::dialect::arith::constant(
-                                self.context,
-                                IntegerAttribute::new(inner_type, int.value as i64).into(),
-                                Location::unknown(self.context),
-                            ))
-                            .result(0)
-                            .unwrap()
-                            .into();
+                    nodes::Value::Float(value) => {
+                        let value = match fusion_type {
+                            crate::types::Type::Float(_) => entry_block
+                                .append_operation(melior::dialect::arith::constant(
+                                    self.context,
+                                    FloatAttribute::new(self.context, inner_type, value.value)
+                                        .into(),
+                                    Location::unknown(self.context),
+                                ))
+                                .result(0)
+                                .unwrap()
+                                .into(),
+                            _ => todo!(),
+                        };
 
                         let store_op = melior::dialect::llvm::store(
                             self.context,
-                            integer_val,
+                            value,
+                            *ptr,
+                            melior::ir::Location::unknown(self.context),
+                            Default::default(),
+                        );
+
+                        entry_block.append_operation(store_op);
+                    }
+                    nodes::Value::Integer(int) => {
+                        let value = match fusion_type {
+                            crate::types::Type::Float(_) => entry_block
+                                .append_operation(melior::dialect::arith::constant(
+                                    self.context,
+                                    FloatAttribute::new(self.context, inner_type, int.value as f64)
+                                        .into(),
+                                    Location::unknown(self.context),
+                                ))
+                                .result(0)
+                                .unwrap()
+                                .into(),
+                            crate::types::Type::Integer(_) => entry_block
+                                .append_operation(melior::dialect::arith::constant(
+                                    self.context,
+                                    IntegerAttribute::new(inner_type, int.value as i64).into(),
+                                    Location::unknown(self.context),
+                                ))
+                                .result(0)
+                                .unwrap()
+                                .into(),
+                            _ => todo!(),
+                        };
+
+                        let store_op = melior::dialect::llvm::store(
+                            self.context,
+                            value,
                             *ptr,
                             melior::ir::Location::unknown(self.context),
                             Default::default(),
