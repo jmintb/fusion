@@ -4,189 +4,189 @@ expression: "format!(\"{}\", ir_progam)"
 ---
 IR:
 fn 33:
-block_17
-0: 18_val = fnarg
-1: 19_len = fnarg
-2: 20_anonymous := Int(1)
-3: 21_22: std_out = 20_anonymous
-4: move(20_anonymous)
-5: 22_anonymous := Int(1)
-6: 23_23: character_size = 22_anonymous
-7: move(22_anonymous)
-8: move(21_std_out)
-9: 24_anonymous := "w"
-10: move(24_anonymous)
-11: receiver_Ssaid(25) = @4( 21_std_out, 24_anonymous,)
-12: 26_stdoutptr = 25_fdopen_result
-13: move(25_fdopen_result)
-14: move(18_val)
-15: move(19_len)
-16: move(23_character_size)
-17: move(26_stdoutptr)
-18: receiver_Ssaid(27) = @6( 18_val, 19_len, 23_character_size, 26_stdoutptr,)
-19: 28_res = 27_fwrite_result
-20: move(27_fwrite_result)
-21: move(21_std_out)
-22: 29_anonymous := "w"
-23: move(29_anonymous)
-24: receiver_Ssaid(30) = @4( 21_std_out, 29_anonymous,)
-25: 31_stdoutptrb = 30_fdopen_result
-26: move(30_fdopen_result)
-27: move(31_stdoutptrb)
-28: receiver_Ssaid(32) = @8( 31_stdoutptrb,)
-29: 33_resb = 32_fflush_result
-30: move(32_fflush_result)
+block_19
+0: 20_val = fnarg
+1: 21_len = fnarg
+2: 22_anonymous := Int(1)
+3: 23_24: std_out = 22_anonymous
+4: move(22_anonymous)
+5: 24_anonymous := Int(1)
+6: 25_25: character_size = 24_anonymous
+7: move(24_anonymous)
+8: move(23_std_out)
+9: 26_anonymous := "w"
+10: move(26_anonymous)
+11: receiver_Ssaid(27) = @4( 23_std_out, 26_anonymous,)
+12: 28_stdoutptr = 27_fdopen_result
+13: move(27_fdopen_result)
+14: move(20_val)
+15: move(21_len)
+16: move(25_character_size)
+17: move(28_stdoutptr)
+18: receiver_Ssaid(29) = @6( 20_val, 21_len, 25_character_size, 28_stdoutptr,)
+19: 30_res = 29_fwrite_result
+20: move(29_fwrite_result)
+21: move(23_std_out)
+22: 31_anonymous := "w"
+23: move(31_anonymous)
+24: receiver_Ssaid(32) = @4( 23_std_out, 31_anonymous,)
+25: 33_stdoutptrb = 32_fdopen_result
+26: move(32_fdopen_result)
+27: move(33_stdoutptrb)
+28: receiver_Ssaid(34) = @8( 33_stdoutptrb,)
+29: 35_resb = 34_fflush_result
+30: move(34_fflush_result)
 31: return
 
 fn 43:
-block_34
-0: 35_val = fnarg
-1: 35_val = Project<35_val>
-2: 36_allocator = fnarg
-3: 36_allocator = Project<36_allocator>
-4: 37_anon = Project<35_val>
-5: move(37_anon)
-6: 38_anon = Project<36_allocator>
-7: move(38_anon)
-8: receiver_Ssaid(39) = @51( 37_anon, 38_anon,)
-9: 40_val_projection = 39_project_raw_string_result
-10: move(39_project_raw_string_result)
-11: move(40_val_projection)
-12: struct_field_read_resul_Ssaid(41) = Ssaid(35)_FieldRead.5
-13: move(41_struct_field_result)
-14: @33( 40_val_projection, 41_struct_field_result,)
+block_36
+0: 37_val = fnarg
+1: 37_val = Project<37_val>
+2: 38_allocator = fnarg
+3: 38_allocator = Project<38_allocator>
+4: 39_anon = Project<37_val>
+5: move(39_anon)
+6: 40_anon = Project<38_allocator>
+7: move(40_anon)
+8: receiver_Ssaid(41) = @51( 39_anon, 40_anon,)
+9: 42_val_projection = 41_project_raw_string_result
+10: move(41_project_raw_string_result)
+11: move(42_val_projection)
+12: struct_field_read_resul_Ssaid(43) = Ssaid(37)_FieldRead.5
+13: move(43_struct_field_result)
+14: @33( 42_val_projection, 43_struct_field_result,)
 15: return
 
 fn 51:
-block_42
-0: 43_val = fnarg
-1: 43_val = Project<43_val>
-2: 44_allocator = fnarg
-3: 44_allocator = Project<44_allocator>
-4: struct_field_read_resul_Ssaid(45) = Ssaid(44)_FieldRead.6
-5: move(45_struct_field_result)
-6: struct_field_read_resul_Ssaid(46) = Ssaid(43)_FieldRead.7
-7: move(46_struct_field_result)
-8: receiver_Ssaid(47) = resultfull_intrinsic memory_offset( 45_struct_field_result, 46_struct_field_result,)
-9: 48_string_ptr = 47_pointer_from_offset_result
-10: move(47_pointer_from_offset_result)
-11: return 48
+block_44
+0: 45_val = fnarg
+1: 45_val = Project<45_val>
+2: 46_allocator = fnarg
+3: 46_allocator = Project<46_allocator>
+4: struct_field_read_resul_Ssaid(47) = Ssaid(46)_FieldRead.6
+5: move(47_struct_field_result)
+6: struct_field_read_resul_Ssaid(48) = Ssaid(45)_FieldRead.7
+7: move(48_struct_field_result)
+8: receiver_Ssaid(49) = resultfull_intrinsic memory_offset( 47_struct_field_result, 48_struct_field_result,)
+9: 50_string_ptr = 49_pointer_from_offset_result
+10: move(49_pointer_from_offset_result)
+11: return 50
 
 fn 62:
-block_49
-0: 50_value = fnarg
-1: 51_destination = fnarg
-2: 52_length_in_bytes = fnarg
-3: 53_offset_in_bytes = fnarg
-4: move(51_destination)
-5: move(53_offset_in_bytes)
-6: receiver_Ssaid(54) = resultfull_intrinsic memory_offset( 51_destination, 53_offset_in_bytes,)
-7: 55_offset_destination = 54_pointer_from_offset_result
-8: move(54_pointer_from_offset_result)
-9: move(50_value)
-10: move(55_offset_destination)
-11: move(52_length_in_bytes)
-12: resutless_intrinsic memory_write( 50_value, 55_offset_destination, 52_length_in_bytes,)
+block_51
+0: 52_value = fnarg
+1: 53_destination = fnarg
+2: 54_length_in_bytes = fnarg
+3: 55_offset_in_bytes = fnarg
+4: move(53_destination)
+5: move(55_offset_in_bytes)
+6: receiver_Ssaid(56) = resultfull_intrinsic memory_offset( 53_destination, 55_offset_in_bytes,)
+7: 57_offset_destination = 56_pointer_from_offset_result
+8: move(56_pointer_from_offset_result)
+9: move(52_value)
+10: move(57_offset_destination)
+11: move(54_length_in_bytes)
+12: resutless_intrinsic memory_write( 52_value, 57_offset_destination, 54_length_in_bytes,)
 13: return
 
 fn 75:
-block_56
-0: 57_allocator = fnarg
-1: 57_allocator = Project<57_allocator>
-2: 58_length = fnarg
-3: struct_field_read_resul_Ssaid(59) = Ssaid(57)_FieldRead.8
-4: 60_string_offset = 59_struct_field_result
-5: move(59_struct_field_result)
-6: 61_@bin_op_result = 60_string_offset + 58_length
-7: move(60_string_offset)
-8: move(58_length)
-9: 62_new_offset = 61_@bin_op_result
-10: move(61_@bin_op_result)
-11: 57_allocator.some_field = 62_new_offset
-12: move(62_new_offset)
-13: return 60
+block_58
+0: 59_allocator = fnarg
+1: 59_allocator = Project<59_allocator>
+2: 60_length = fnarg
+3: struct_field_read_resul_Ssaid(61) = Ssaid(59)_FieldRead.8
+4: 62_string_offset = 61_struct_field_result
+5: move(61_struct_field_result)
+6: 63_@bin_op_result = 62_string_offset + 60_length
+7: move(62_string_offset)
+8: move(60_length)
+9: 64_new_offset = 63_@bin_op_result
+10: move(63_@bin_op_result)
+11: 59_allocator.some_field = 64_new_offset
+12: move(64_new_offset)
+13: return 62
 
 fn 87:
-block_63
-0: 64_anonymous := Int(5000)
-1: 65_41: size = 64_anonymous
-2: move(64_anonymous)
-3: move(65_size)
-4: receiver_Ssaid(66) = @3( 65_size,)
-5: 67_memory = 66_malloc_result
-6: move(66_malloc_result)
-7: 68_anonymous := Int(0)
-8: struct_init_result_Ssaid(69) = StructInit<43>[ 67_memory, 65_size, 68_anonymous,]
-9: return 69
+block_65
+0: 66_anonymous := Int(5000)
+1: 67_43: size = 66_anonymous
+2: move(66_anonymous)
+3: move(67_size)
+4: receiver_Ssaid(68) = @3( 67_size,)
+5: 69_memory = 68_malloc_result
+6: move(68_malloc_result)
+7: 70_anonymous := Int(0)
+8: struct_init_result_Ssaid(71) = StructInit<45>[ 69_memory, 67_size, 70_anonymous,]
+9: return 71
 
 fn 98:
-block_70
-0: 71_allocator = fnarg
-1: 71_allocator = Project<71_allocator>
-2: 72_length = fnarg
-3: 73_anon = Project<71_allocator>
-4: move(73_anon)
-5: move(72_length)
-6: receiver_Ssaid(74) = @75( 73_anon, 72_length,)
-7: 75_string_offset = 74_allocate_for_string_result
-8: move(74_allocate_for_string_result)
-9: struct_init_result_Ssaid(76) = StructInit<47>[ 75_string_offset, 72_length,]
-10: return 76
+block_72
+0: 73_allocator = fnarg
+1: 73_allocator = Project<73_allocator>
+2: 74_length = fnarg
+3: 75_anon = Project<73_allocator>
+4: move(75_anon)
+5: move(74_length)
+6: receiver_Ssaid(76) = @75( 75_anon, 74_length,)
+7: 77_string_offset = 76_allocate_for_string_result
+8: move(76_allocate_for_string_result)
+9: struct_init_result_Ssaid(78) = StructInit<49>[ 77_string_offset, 74_length,]
+10: return 78
 
 fn 134:
-block_77
-0: 78_anonymous := "testt\n"
-1: 79_a = 78_anonymous
-2: move(78_anonymous)
-3: 80_anonymous := "empty\n"
-4: 81_b = 80_anonymous
-5: move(80_anonymous)
-6: receiver_Ssaid(82) = @87()
-7: 83_allocator = 82_init_string_allocator_result
-8: move(82_init_string_allocator_result)
-9: 84_anon = Project<83_allocator>
-10: move(84_anon)
-11: 85_anonymous := Int(6)
-12: move(85_anonymous)
-13: receiver_Ssaid(86) = @98( 84_anon, 85_anonymous,)
-14: 87_new_string = 86_new_string_result
-15: move(86_new_string_result)
-16: 88_anon = Project<83_allocator>
-17: move(88_anon)
-18: 89_anonymous := Int(6)
-19: move(89_anonymous)
-20: receiver_Ssaid(90) = @98( 88_anon, 89_anonymous,)
-21: 91_new_string_b = 90_new_string_result
-22: move(90_new_string_result)
-23: move(79_a)
-24: struct_field_read_resul_Ssaid(92) = Ssaid(83)_FieldRead.10
-25: move(92_struct_field_result)
-26: struct_field_read_resul_Ssaid(93) = Ssaid(87)_FieldRead.11
-27: move(93_struct_field_result)
-28: struct_field_read_resul_Ssaid(94) = Ssaid(87)_FieldRead.12
-29: move(94_struct_field_result)
-30: @62( 79_a, 92_struct_field_result, 93_struct_field_result, 94_struct_field_result,)
-31: move(81_b)
-32: struct_field_read_resul_Ssaid(95) = Ssaid(83)_FieldRead.13
-33: move(95_struct_field_result)
-34: struct_field_read_resul_Ssaid(96) = Ssaid(91)_FieldRead.14
-35: move(96_struct_field_result)
-36: struct_field_read_resul_Ssaid(97) = Ssaid(91)_FieldRead.15
-37: move(97_struct_field_result)
-38: @62( 81_b, 95_struct_field_result, 96_struct_field_result, 97_struct_field_result,)
-39: 98_anon = Project<87_new_string>
-40: move(98_anon)
-41: 99_anon = Project<83_allocator>
-42: move(99_anon)
-43: @43( 98_anon, 99_anon,)
-44: 100_anon = Project<91_new_string_b>
-45: move(100_anon)
-46: 101_anon = Project<83_allocator>
-47: move(101_anon)
-48: @43( 100_anon, 101_anon,)
-49: 102_anon = Project<91_new_string_b>
-50: move(102_anon)
-51: 103_anon = Project<83_allocator>
-52: move(103_anon)
-53: @43( 102_anon, 103_anon,)
+block_79
+0: 80_anonymous := "testt\n"
+1: 81_a = 80_anonymous
+2: move(80_anonymous)
+3: 82_anonymous := "empty\n"
+4: 83_b = 82_anonymous
+5: move(82_anonymous)
+6: receiver_Ssaid(84) = @87()
+7: 85_allocator = 84_init_string_allocator_result
+8: move(84_init_string_allocator_result)
+9: 86_anon = Project<85_allocator>
+10: move(86_anon)
+11: 87_anonymous := Int(6)
+12: move(87_anonymous)
+13: receiver_Ssaid(88) = @98( 86_anon, 87_anonymous,)
+14: 89_new_string = 88_new_string_result
+15: move(88_new_string_result)
+16: 90_anon = Project<85_allocator>
+17: move(90_anon)
+18: 91_anonymous := Int(6)
+19: move(91_anonymous)
+20: receiver_Ssaid(92) = @98( 90_anon, 91_anonymous,)
+21: 93_new_string_b = 92_new_string_result
+22: move(92_new_string_result)
+23: move(81_a)
+24: struct_field_read_resul_Ssaid(94) = Ssaid(85)_FieldRead.10
+25: move(94_struct_field_result)
+26: struct_field_read_resul_Ssaid(95) = Ssaid(89)_FieldRead.11
+27: move(95_struct_field_result)
+28: struct_field_read_resul_Ssaid(96) = Ssaid(89)_FieldRead.12
+29: move(96_struct_field_result)
+30: @62( 81_a, 94_struct_field_result, 95_struct_field_result, 96_struct_field_result,)
+31: move(83_b)
+32: struct_field_read_resul_Ssaid(97) = Ssaid(85)_FieldRead.13
+33: move(97_struct_field_result)
+34: struct_field_read_resul_Ssaid(98) = Ssaid(93)_FieldRead.14
+35: move(98_struct_field_result)
+36: struct_field_read_resul_Ssaid(99) = Ssaid(93)_FieldRead.15
+37: move(99_struct_field_result)
+38: @62( 83_b, 97_struct_field_result, 98_struct_field_result, 99_struct_field_result,)
+39: 100_anon = Project<89_new_string>
+40: move(100_anon)
+41: 101_anon = Project<85_allocator>
+42: move(101_anon)
+43: @43( 100_anon, 101_anon,)
+44: 102_anon = Project<93_new_string_b>
+45: move(102_anon)
+46: 103_anon = Project<85_allocator>
+47: move(103_anon)
+48: @43( 102_anon, 103_anon,)
+49: 104_anon = Project<93_new_string_b>
+50: move(104_anon)
+51: 105_anon = Project<85_allocator>
+52: move(105_anon)
+53: @43( 104_anon, 105_anon,)
 54: return

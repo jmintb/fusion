@@ -1,5 +1,8 @@
 integer = { ASCII_DIGIT+ }
 
+
+float = { integer ~ "." ~ integer }
+
 system_bit_width = { "size" }
 
 bit_width = _{ integer | system_bit_width } 
@@ -61,7 +64,7 @@ array = { "[" ~ ( expression ~ ",")* ~ expression? ~ "]"}
 array_lookup = { identifier ~ "[" ~ expression ~ "]"}
 
 expression = _{
-	array | array_lookup | return | yield | assign | if_else | if | while_loop | boolean | call | structInit | structFieldRef | integer | string | identifier | reference | operation    
+	array | array_lookup | return | yield | assign | if_else | if | while_loop | boolean | call | structInit | structFieldRef | float | integer | string | identifier | reference | operation    
 }
 
 condition = _{ expression }
@@ -72,6 +75,8 @@ signed_integer = { "i" ~  bit_width }
 
 unsigned_integer = { "u" ~ bit_width  }
 
+float_type = { "f" ~ integer }
+
 string_type = { "str" }
 
 named_type = { identifier }
@@ -81,7 +86,7 @@ pointer = { "ptr" }
 comment = _{ "//" ~ (!"\n" ~ ANY)* }
 
 type = {
-	array_type | pointer | signed_integer | unsigned_integer | string_type | named_type
+	array_type | pointer | float_type | signed_integer | unsigned_integer | string_type | named_type
 }
 
 if_else = { "if" ~ condition ~ "{" ~ block ~ "}" ~ "else" ~ "{" ~ block ~ "}" }

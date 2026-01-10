@@ -12,11 +12,18 @@ pub enum Type {
     Unknown,
     Integer(SignedIntegerType),
     UnsignedInteger(UnsignedIntegerType),
+    Float(FloatBitWidth),
     Boolean,
     Pointer,
     #[default]
     Unit,
     Array(ArrayTypeID),
+}
+
+#[derive(Clone, Debug, Copy, PartialEq, Ord, Eq, PartialOrd)]
+pub enum FloatBitWidth {
+    Bit64,
+    Bit32,
 }
 
 #[derive(Clone, Debug, Copy, PartialEq, Ord, Eq, PartialOrd)]

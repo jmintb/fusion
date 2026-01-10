@@ -4,63 +4,63 @@ expression: "format!(\"{}\", ir_progam)"
 ---
 IR:
 fn 33:
-block_15
-0: 16_val = fnarg
-1: 17_len = fnarg
-2: 18_anonymous := Int(1)
-3: 19_15: std_out = 18_anonymous
-4: move(18_anonymous)
-5: 20_anonymous := Int(1)
-6: 21_16: character_size = 20_anonymous
-7: move(20_anonymous)
-8: move(19_std_out)
-9: 22_anonymous := "w"
-10: move(22_anonymous)
-11: receiver_Ssaid(23) = @4( 19_std_out, 22_anonymous,)
-12: 24_stdoutptr = 23_fdopen_result
-13: move(23_fdopen_result)
-14: move(16_val)
-15: move(17_len)
-16: move(21_character_size)
-17: move(24_stdoutptr)
-18: receiver_Ssaid(25) = @6( 16_val, 17_len, 21_character_size, 24_stdoutptr,)
-19: 26_res = 25_fwrite_result
-20: move(25_fwrite_result)
-21: move(19_std_out)
-22: 27_anonymous := "w"
-23: move(27_anonymous)
-24: receiver_Ssaid(28) = @4( 19_std_out, 27_anonymous,)
-25: 29_stdoutptrb = 28_fdopen_result
-26: move(28_fdopen_result)
-27: move(29_stdoutptrb)
-28: receiver_Ssaid(30) = @8( 29_stdoutptrb,)
-29: 31_resb = 30_fflush_result
-30: move(30_fflush_result)
+block_17
+0: 18_val = fnarg
+1: 19_len = fnarg
+2: 20_anonymous := Int(1)
+3: 21_17: std_out = 20_anonymous
+4: move(20_anonymous)
+5: 22_anonymous := Int(1)
+6: 23_18: character_size = 22_anonymous
+7: move(22_anonymous)
+8: move(21_std_out)
+9: 24_anonymous := "w"
+10: move(24_anonymous)
+11: receiver_Ssaid(25) = @4( 21_std_out, 24_anonymous,)
+12: 26_stdoutptr = 25_fdopen_result
+13: move(25_fdopen_result)
+14: move(18_val)
+15: move(19_len)
+16: move(23_character_size)
+17: move(26_stdoutptr)
+18: receiver_Ssaid(27) = @6( 18_val, 19_len, 23_character_size, 26_stdoutptr,)
+19: 28_res = 27_fwrite_result
+20: move(27_fwrite_result)
+21: move(21_std_out)
+22: 29_anonymous := "w"
+23: move(29_anonymous)
+24: receiver_Ssaid(30) = @4( 21_std_out, 29_anonymous,)
+25: 31_stdoutptrb = 30_fdopen_result
+26: move(30_fdopen_result)
+27: move(31_stdoutptrb)
+28: receiver_Ssaid(32) = @8( 31_stdoutptrb,)
+29: 33_resb = 32_fflush_result
+30: move(32_fflush_result)
 31: return
 
 fn 53:
-block_32
-0: 33_anonymous := Int(2)
-1: 34_21: x = 33_anonymous
-2: move(33_anonymous)
-3: 35_anonymous := Int(3)
-4: 36_22: y = 35_anonymous
-5: move(35_anonymous)
-6: 37_@bin_op_result = 34_x + 36_y
-7: move(34_x)
-8: move(36_y)
-9: 38_23: sum = 37_@bin_op_result
-10: move(37_@bin_op_result)
-11: 39_anonymous := Int(5)
-12: 40_24: correct_value = 39_anonymous
-13: move(39_anonymous)
-14: 41_@bin_op_result = 38_sum != 40_correct_value
-15: move(38_sum)
-16: move(40_correct_value)
-17: if 41_@bin_op_result then 42_block
+block_34
+0: 35_anonymous := Int(2)
+1: 36_23: x = 35_anonymous
+2: move(35_anonymous)
+3: 37_anonymous := Int(3)
+4: 38_24: y = 37_anonymous
+5: move(37_anonymous)
+6: 39_@bin_op_result = 36_x + 38_y
+7: move(36_x)
+8: move(38_y)
+9: 40_25: sum = 39_@bin_op_result
+10: move(39_@bin_op_result)
+11: 41_anonymous := Int(5)
+12: 42_26: correct_value = 41_anonymous
+13: move(41_anonymous)
+14: 43_@bin_op_result = 40_sum != 42_correct_value
+15: move(40_sum)
+16: move(42_correct_value)
+17: if 43_@bin_op_result then 44_block
 
-block_42
+block_44
 0: @34()
 
-block_43
+block_45
 0: return

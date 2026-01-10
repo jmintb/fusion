@@ -39,7 +39,7 @@ use crate::ast::nodes::{
 };
 use crate::ast::{Ast, NodeDatabase};
 use crate::control_flow_graph::ControlFlowGraph;
-use crate::types::{FlatEntityStore, IntegerBitWidth};
+use crate::types::{FlatEntityStore, FloatBitWidth, IntegerBitWidth};
 
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Copy, Hash, Default)]
 pub struct Ssaid(pub usize);
@@ -233,6 +233,11 @@ pub enum Instruction {
         type_name_id: usize,
         bit_width: IntegerBitWidth,
     },
+    DeclareFLoatingPointType {
+        receiver: Ssaid,
+        type_name_id: usize,
+        bit_width: FloatBitWidth,
+    },
     DeclareIntegerType {
         receiver: Ssaid,
         type_name_id: usize,
@@ -268,6 +273,7 @@ impl Instruction {
     ) -> String {
         match self {
             Self::DeclareIntegerType { .. } => "".to_string(),
+            Self::DeclareFLoatingPointType { .. } => "".to_string(),
             Self::DeclareUnsignedIntegerType { .. } => "".to_string(),
             Self::DeclareBooleanType { .. } => "".to_string(),
             Self::DeclarePointerType { .. } => "".to_string(),
@@ -818,7 +824,30 @@ impl IrGenerator {
         let builtin_ptr_type = self.add_ssa_variable(Identifier::new("ptr".to_string()));
         let builtin_boolean_type = self.add_ssa_variable(Identifier::new("boolean".to_string()));
 
+        let builtin_f64_type = self.add_ssa_variable(Identifier::new("f64".to_string()));
+        let builtin_f32_type = self.add_ssa_variable(Identifier::new("f32".to_string()));
+
         let top_level_block = self.add_block();
+
+        let f32_float_type_name_id = self.type_names.insert(Type::Float32);
+        self.add_instruction(
+            top_level_block,
+            Instruction::DeclareFLoatingPointType {
+                receiver: builtin_f32_type,
+                type_name_id: f32_float_type_name_id,
+                bit_width: FloatBitWidth::Bit32,
+            },
+        );
+
+        let f64_float_type_name_id = self.type_names.insert(Type::Float64);
+        self.add_instruction(
+            top_level_block,
+            Instruction::DeclareFLoatingPointType {
+                receiver: builtin_f64_type,
+                type_name_id: f64_float_type_name_id,
+                bit_width: FloatBitWidth::Bit64,
+            },
+        );
 
         let u8_integer_type_name_id = self.type_names.insert(Type::UnsignedInteger8);
         self.add_instruction(

@@ -236,6 +236,17 @@ fn check_types(
             let type_name = ctx.ir_program.type_names.get(*type_name_id).unwrap();
             bc_ctx.type_name_ids.insert(type_name.clone(), *receiver);
         }
+        Instruction::DeclareFLoatingPointType {
+            receiver,
+            type_name_id,
+            bit_width,
+        } => {
+            bc_ctx
+                .comp_time_types
+                .insert(*receiver, Type::Float(*bit_width));
+            let type_name = ctx.ir_program.type_names.get(*type_name_id).unwrap();
+            bc_ctx.type_name_ids.insert(type_name.clone(), *receiver);
+        }
         Instruction::DeclareIntegerType {
             receiver,
             type_name_id,
@@ -272,7 +283,11 @@ fn check_types(
                     let type_ssaid = bc_ctx.type_name_ids.get(&TypeName::Integer32).unwrap();
                     bc_ctx.variable_types.insert(*ssaid, *type_ssaid);
                 }
-                _ => (),
+                crate::ast::nodes::Value::Float(_) => {
+                    let type_ssaid = bc_ctx.type_name_ids.get(&TypeName::Float64).unwrap();
+                    bc_ctx.variable_types.insert(*ssaid, *type_ssaid);
+                }
+                _ => panic!(),
             }
         }
         Instruction::StructDeclaration {
@@ -379,7 +394,7 @@ fn check_types(
             {
                 let value_type = bc_ctx.comp_time_types[&value_type_id];
                 match value_type {
-                    Type::Integer(_) | Type::UnsignedInteger(_) => {
+                    Type::Integer(_) | Type::UnsignedInteger(_) | Type::Float(_) => {
                         bc_ctx.variable_types.insert(*value, annotated_type_id);
                     }
                     _ => panic!("can't assign value to to type"),
