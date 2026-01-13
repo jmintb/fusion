@@ -1,11 +1,13 @@
 pub mod binary_operations;
 pub mod intrinsics;
+pub mod types;
 
 use std::collections::{BTreeMap, HashMap};
 use std::fmt::Display;
 
 use binary_operations::BinaryOperation;
 use tracing::debug;
+use types::TypeDeclaration;
 
 use self::intrinsics::{
     ResultfullIntrinsic,
@@ -255,6 +257,7 @@ pub enum Instruction {
         receiver: Ssaid,
         type_name_id: usize,
     },
+    DeclareType(TypeDeclaration),
 }
 
 impl Instruction {
@@ -272,6 +275,7 @@ impl Instruction {
         static_ssa_values: &HashMap<Ssaid, Value>,
     ) -> String {
         match self {
+            Self::DeclareType { .. } => "".to_string(),
             Self::DeclareIntegerType { .. } => "".to_string(),
             Self::DeclareFLoatingPointType { .. } => "".to_string(),
             Self::DeclareUnsignedIntegerType { .. } => "".to_string(),
@@ -852,7 +856,7 @@ impl IrGenerator {
         let u8_integer_type_name_id = self.type_names.insert(Type::UnsignedInteger8);
         self.add_instruction(
             top_level_block,
-            Instruction::DeclareIntegerType {
+            Instruction::DeclareUnsignedIntegerType {
                 receiver: builtin_u8_type,
                 type_name_id: u8_integer_type_name_id,
                 bit_width: IntegerBitWidth::Bit8,
@@ -862,7 +866,7 @@ impl IrGenerator {
         let u16_integer_type_name_id = self.type_names.insert(Type::UnsignedInteger16);
         self.add_instruction(
             top_level_block,
-            Instruction::DeclareIntegerType {
+            Instruction::DeclareUnsignedIntegerType {
                 receiver: builtin_u16_type,
                 type_name_id: u16_integer_type_name_id,
                 bit_width: IntegerBitWidth::Bit16,
@@ -872,7 +876,7 @@ impl IrGenerator {
         let u32_integer_type_name_id = self.type_names.insert(Type::UnsignedInteger32);
         self.add_instruction(
             top_level_block,
-            Instruction::DeclareIntegerType {
+            Instruction::DeclareUnsignedIntegerType {
                 receiver: builtin_u32_type,
                 type_name_id: u32_integer_type_name_id,
                 bit_width: IntegerBitWidth::Bit32,
@@ -882,7 +886,7 @@ impl IrGenerator {
         let u64_integer_type_name_id = self.type_names.insert(Type::UnsignedInteger64);
         self.add_instruction(
             top_level_block,
-            Instruction::DeclareIntegerType {
+            Instruction::DeclareUnsignedIntegerType {
                 receiver: builtin_u64_type,
                 type_name_id: u64_integer_type_name_id,
                 bit_width: IntegerBitWidth::Bit64,
@@ -892,7 +896,7 @@ impl IrGenerator {
         let usize_integer_type_name_id = self.type_names.insert(Type::UnsignedIntegerSized);
         self.add_instruction(
             top_level_block,
-            Instruction::DeclareIntegerType {
+            Instruction::DeclareUnsignedIntegerType {
                 receiver: builtin_usize_type,
                 type_name_id: usize_integer_type_name_id,
                 bit_width: IntegerBitWidth::PlatformSize,
@@ -1033,7 +1037,7 @@ impl IrGenerator {
             self.convert_function_declaration(function_declaration);
         }
 
-        IrProgram {
+        let ir_prgram = IrProgram {
             ssa_variables: self.ssa_variables,
             blocks: self.blocks,
             entry_block: self.entry_block,
@@ -1049,7 +1053,11 @@ impl IrGenerator {
             type_names: self.type_names,
             projections: self.projections,
             function_arguments: self.function_arguments,
-        }
+        };
+
+        debug!("generated program IR: {}", ir_prgram);
+
+        ir_prgram
     }
 
     fn record_cfg_connection(&mut self, parent: BlockId, child: BlockId) {
@@ -1087,11 +1095,31 @@ impl IrGenerator {
             );
         };
 
+        debug!("got {:?} as result for assignment", result_id);
+
         let ssa_id = self.add_ssa_variable(assignment.id);
         let assign_instruction = Instruction::Assign(ssa_id, result_id);
         self.add_instruction(updated_block_id, assign_instruction);
         self.add_instruction(updated_block_id, self.get_access_instruction(result_id));
         updated_block_id
+    }
+
+    fn emit_type_declaration(&mut self, type_name_id: usize, current_block: BlockId) {
+        match self.type_names.get(type_name_id).unwrap().clone() {
+            type_name @ TypeName::Array(_, _) => {
+                let receiver = self.add_anon_ssa_variable();
+                let instruction = Instruction::DeclareType(TypeDeclaration {
+                    receiver,
+                    type_name_id,
+                });
+                self.add_instruction(current_block, instruction);
+                debug!("emitted type declaration instruction reciever: {:?}, type_name_id: {}, type_name: {:?}", receiver, type_name_id, type_name);
+            }
+            type_name => debug!(
+                "skipping type declaration emmission as the type name was a built in {:?}.",
+                type_name
+            ),
+        }
     }
 
     fn convert_annotated_assignment(
@@ -1107,8 +1135,10 @@ impl IrGenerator {
                 self.node_db.expressions.get(&assignment.expression)
             );
         };
+        debug!("got {:?} as result for annotated assignment", result_id);
 
         let type_name_id = self.type_names.insert(assignment.type_annotation);
+        self.emit_type_declaration(type_name_id, current_block);
 
         let ssa_id = self.add_ssa_variable(assignment.id);
         let assign_instruction = Instruction::AnnotatedAssign(AnnotatedAssignment {

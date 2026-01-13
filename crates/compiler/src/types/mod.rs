@@ -148,17 +148,29 @@ impl From<ArrayTypeID> for TypeID {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct FlatEntityStore<T, K: From<usize>> {
+pub struct FlatEntityStore<T: PartialEq, K: From<usize>> {
     entities: Vec<T>,
     // This is only to force a specific type is used as the IDs in a store. It stores no data at runtime.
     id_type_marker: PhantomData<K>,
 }
 
-impl<T, K: From<usize> + Into<usize>> FlatEntityStore<T, K> {
+impl<T: PartialEq, K: From<usize> + Into<usize>> FlatEntityStore<T, K> {
     pub fn insert(&mut self, entity: T) -> K {
         let next_id = self.entities.len();
         self.entities.push(entity);
         K::from(next_id)
+    }
+
+    pub fn insert_if_not_present(&mut self, entity: T) -> K {
+        if let Some(position) = self.entities.iter().position(|item| item == &entity) {
+            return K::from(position);
+        }
+
+        self.insert(entity)
+    }
+
+    pub fn contains(&self, entity: &T) -> bool {
+        self.entities.contains(entity)
     }
 
     pub fn get(&self, id: K) -> Option<&T> {

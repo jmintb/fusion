@@ -465,7 +465,17 @@ impl<'ctx> CodeGen<'ctx> {
             let fusion_type = if function_types.variable_types.contains_key(ssa_id) {
                 &function_types
                     .lookup_variable_type(*ssa_id)
-                    .unwrap_or_else(|_| panic!("failed to find type for: {:?}", ssa_id))
+                    .unwrap_or_else(|_| {
+                        panic!(
+                            "failed to find type for: {:?}",
+                            self.program
+                                .get_all_ssa_variables()
+                                .iter()
+                                .find(|id| id.0 == ssa_id)
+                                .unwrap()
+                                .1
+                        )
+                    })
             } else {
                 panic!("failed to find type for {:?}", ssa_id);
             };
@@ -564,6 +574,15 @@ impl<'ctx> CodeGen<'ctx> {
                                 .unwrap()
                                 .into(),
                             crate::types::Type::Integer(_) => entry_block
+                                .append_operation(melior::dialect::arith::constant(
+                                    self.context,
+                                    IntegerAttribute::new(inner_type, int.value as i64).into(),
+                                    Location::unknown(self.context),
+                                ))
+                                .result(0)
+                                .unwrap()
+                                .into(),
+                            crate::types::Type::UnsignedInteger(_) => entry_block
                                 .append_operation(melior::dialect::arith::constant(
                                     self.context,
                                     IntegerAttribute::new(inner_type, int.value as i64).into(),
@@ -1852,7 +1871,8 @@ impl<'ctx> CodeGen<'ctx> {
             | Instruction::BorrowEnd(_)
             | Instruction::Move(_)
             | Instruction::Borrow(_)
-            | Instruction::Drop(_) => None,
+            | Instruction::Drop(_)
+            | Instruction::DeclareType(_) => None,
             _ => panic!("instruction not implemented yet {:?}", instruction),
         };
 

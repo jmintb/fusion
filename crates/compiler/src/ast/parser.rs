@@ -2,6 +2,7 @@ use anyhow::{bail, Result};
 use pest::iterators::{Pair, Pairs};
 use pest::Parser;
 use pest_derive::Parser;
+use tracing::debug;
 
 use super::declarations::ModuleDeclaration;
 use super::identifiers::{
@@ -529,6 +530,7 @@ fn parse_assign(builder: &mut AstBuilder, pair: Pair<'_, Rule>) -> Result<Assign
 }
 
 fn parse_assignment(builder: &mut AstBuilder, pair: Pair<'_, Rule>) -> Result<Assignment> {
+    debug!("parsing assignment {:?}", pair.as_str());
     let mut inner_rules = pair.into_inner();
 
     let identifier = inner_rules.next().unwrap();
@@ -557,6 +559,7 @@ fn parse_annotated_assignment(
     builder: &mut AstBuilder,
     pair: Pair<'_, Rule>,
 ) -> Result<AnnotatedAssignment> {
+    debug!("parsing annoated assignment {:?}", pair.as_str());
     let mut inner_rules = pair.into_inner();
 
     let identifier = inner_rules.next().unwrap();
@@ -649,7 +652,7 @@ fn parse_unsigned_integer_type_annotation(pair: Pair<Rule>) -> Result<Type> {
             "8" => Type::UnsignedInteger8,
             _ => todo!(),
         },
-        Rule::system_bit_width => Type::IntegerSize,
+        Rule::system_bit_width => Type::UnsignedIntegerSized,
         e => bail!("expected to find bit width but got {:?}", e),
     })
 }

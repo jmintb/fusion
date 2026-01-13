@@ -8,6 +8,7 @@ use super::ir_transformer::{IrInterpreter, TransformContext};
 use crate::ast::identifiers::FunctionDeclarationID;
 use crate::control_flow_graph::ControlFlowGraph;
 use crate::ir::intrinsics::ResultfullIntrinsicCall;
+use crate::ir::types::TypeDeclaration;
 use crate::ir::{AnnotatedAssignment, BlockId, Instruction, IrProgram, Ssaid};
 use crate::types::{ArrayTypeID, FlatEntityStore, StructTypeID, Type};
 
@@ -116,13 +117,13 @@ impl IrProgramTypes {
 
 // TODO: make this fault tolerant
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct StructType {
     pub field_ids: Vec<usize>,
     pub field_types: Vec<Ssaid>,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct ArrayType {
     pub length: usize,
     pub element_type: Ssaid,
@@ -235,6 +236,7 @@ fn check_types(
             );
             let type_name = ctx.ir_program.type_names.get(*type_name_id).unwrap();
             bc_ctx.type_name_ids.insert(type_name.clone(), *receiver);
+            debug!("declared unsigned integer type {:?}", receiver);
         }
         Instruction::DeclareFLoatingPointType {
             receiver,
@@ -258,6 +260,7 @@ fn check_types(
             );
             let type_name = ctx.ir_program.type_names.get(*type_name_id).unwrap();
             bc_ctx.type_name_ids.insert(type_name.clone(), *receiver);
+            debug!("declared signed integer type {:?}", receiver);
         }
         Instruction::DeclareStringType {
             receiver,
@@ -272,6 +275,45 @@ fn check_types(
                 .type_name_ids
                 .insert(TypeName::StringLiteral, *receiver);
         }
+
+        Instruction::DeclareType(TypeDeclaration {
+            receiver,
+            type_name_id,
+        }) => {
+            let type_name = ctx.ir_program.type_names.get(*type_name_id).unwrap();
+
+            match type_name {
+                TypeName::Array(element_type_name, length) => {
+                    // TODO: replace this with a type_name_id for the element type annotation.code
+                    let Some(element_type_ssaid) = bc_ctx.type_name_ids.get(element_type_name)
+                    else {
+                        panic!("{:?}", type_name);
+                    };
+                    let array_type = ArrayType {
+                        element_type: *element_type_ssaid,
+                        length: *length,
+                    };
+
+                    let array_type_id = bc_ctx.array_types.insert_if_not_present(array_type);
+                    let r#type = Type::Array(array_type_id);
+
+                    bc_ctx.comp_time_types.insert(*receiver, r#type);
+                    bc_ctx.type_name_ids.insert(type_name.clone(), *receiver);
+                    debug!("declared array type {:?} {:?}", receiver, r#type);
+                }
+                TypeName::Integer8
+                | TypeName::Integer16
+                | TypeName::Integer32
+                | TypeName::Integer64
+                | TypeName::IntegerSize
+                | TypeName::UnsignedInteger8
+                | TypeName::UnsignedInteger16
+                | TypeName::UnsignedInteger32
+                | TypeName::UnsignedInteger64
+                | TypeName::UnsignedIntegerSized => (),
+                _ => todo!(),
+            };
+        }
         Instruction::AnonymousValue(ssaid) => {
             let value = ctx.ir_program.static_values.get(ssaid).unwrap();
             match *value {
@@ -281,6 +323,11 @@ fn check_types(
                 }
                 crate::ast::nodes::Value::Integer(_) => {
                     let type_ssaid = bc_ctx.type_name_ids.get(&TypeName::Integer32).unwrap();
+                    let r#type = bc_ctx.comp_time_types[type_ssaid];
+                    debug!(
+                        "annotate anon integer {:?} with type {:?} {:?} ",
+                        ssaid, type_ssaid, r#type
+                    );
                     bc_ctx.variable_types.insert(*ssaid, *type_ssaid);
                 }
                 crate::ast::nodes::Value::Float(_) => {
@@ -394,14 +441,19 @@ fn check_types(
             {
                 let value_type = bc_ctx.comp_time_types[&value_type_id];
                 match value_type {
-                    Type::Integer(_) | Type::UnsignedInteger(_) | Type::Float(_) => {
+                    Type::Integer(_)
+                    | Type::UnsignedInteger(_)
+                    | Type::Float(_)
+                    | Type::Array(_) => {
                         bc_ctx.variable_types.insert(*value, annotated_type_id);
                     }
                     _ => panic!("can't assign value to to type"),
                 }
             } else {
+                // TODO: right now we can'g guarantee that equivilant types will have the same ID. At some point we should make that the case.
                 assert!(
-                    annotated_type_id == value_type_id,
+                    bc_ctx.comp_time_types[&annotated_type_id]
+                        == bc_ctx.comp_time_types[&value_type_id],
                     "lhs: {:?}, rhs: {:?}",
                     bc_ctx.comp_time_types[&annotated_type_id],
                     bc_ctx.comp_time_types[&value_type_id]

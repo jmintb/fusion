@@ -40,7 +40,7 @@ extern fn sprintf(output: str, format: str, number: usize) -> usize;
 extern fn fflush(owned file: str) -> usize;
 extern fn sleep(time: usize) -> usize;
 fn print(owned val: str, owned len: i32) {
-     let std_out: usize= 1
+     let std_out: usize = 1
      let character_size: usize = 1
      let stdoutptr = fdopen(std_out, \"w\");
      let res = fwrite(val, len, character_size, stdoutptr);

@@ -26,8 +26,8 @@ impl BinaryOperation {
 
         if left_hand_side_type_id != right_hand_side_type_id {
             bail!("expected both operators to have the same type, but got {:?} and {:?} for a {:?} operation",
-                progam_types.comp_time_types[&left_hand_side_type_id], 
-                progam_types.comp_time_types[&right_hand_side_type_id], 
+                progam_types.comp_time_types[&left_hand_side_type_id],
+                progam_types.comp_time_types[&right_hand_side_type_id],
                 self.operation_id.to_debug_string()
                 );
         }
@@ -84,6 +84,7 @@ impl BinaryOperation {
     pub fn is_integer_operation(&self, progam_types: &IrProgramTypes) -> Result<bool> {
         match self.element_type(progam_types)? {
             Type::Integer(_) => Ok(true),
+            Type::UnsignedInteger(_) => Ok(true),
             _ => Ok(false),
         }
     }
