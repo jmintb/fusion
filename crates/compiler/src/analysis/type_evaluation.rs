@@ -464,7 +464,10 @@ fn check_types(
             if bc_ctx.is_projection(value) {
                 bc_ctx.set_variable_as_projected(reciever);
             };
-            debug!("evaluated annotated assignment with annotated type: {:?}", bc_ctx.comp_time_types[&annotated_type_id]);
+            debug!(
+                "evaluated annotated assignment with annotated type: {:?}",
+                bc_ctx.comp_time_types[&annotated_type_id]
+            );
         }
         Instruction::Assign(result, value) => {
             if let Some(r#type) = bc_ctx.variable_types.get(value) {
