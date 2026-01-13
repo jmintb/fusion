@@ -4,78 +4,77 @@ expression: "format!(\"{}\", ir_program)"
 ---
 IR:
 fn 33:
-block_18
-0: 19_val = fnarg
-1: 20_len = fnarg
-2: 21_anonymous := Int(1)
-3: 22_20: std_out = 21_anonymous
-4: move(21_anonymous)
-5: 23_anonymous := Int(1)
-6: 24_21: character_size = 23_anonymous
-7: move(23_anonymous)
-8: move(22_std_out)
-9: 25_anonymous := "w"
-10: move(25_anonymous)
-11: receiver_Ssaid(26) = @4( 22_std_out, 25_anonymous,)
-12: 27_stdoutptr = 26_fdopen_result
-13: move(26_fdopen_result)
-14: move(19_val)
-15: move(20_len)
-16: move(24_character_size)
-17: move(27_stdoutptr)
-18: receiver_Ssaid(28) = @6( 19_val, 20_len, 24_character_size, 27_stdoutptr,)
-19: 29_res = 28_fwrite_result
-20: drop(29_res)
-21: move(28_fwrite_result)
-22: move(22_std_out)
-23: 30_anonymous := "w"
-24: move(30_anonymous)
-25: receiver_Ssaid(31) = @4( 22_std_out, 30_anonymous,)
-26: 32_stdoutptrb = 31_fdopen_result
-27: move(31_fdopen_result)
-28: move(32_stdoutptrb)
-29: receiver_Ssaid(33) = @8( 32_stdoutptrb,)
-30: 34_resb = 33_fflush_result
-31: drop(34_resb)
-32: move(33_fflush_result)
+block_19
+0: 20_val = fnarg
+1: 21_len = fnarg
+2: 22_anonymous := Int(1)
+3: 23_22: std_out = 22_anonymous
+4: move(22_anonymous)
+5: 24_anonymous := Int(1)
+6: 25_23: character_size = 24_anonymous
+7: move(24_anonymous)
+8: move(23_std_out)
+9: 26_anonymous := "w"
+10: move(26_anonymous)
+11: receiver_Ssaid(27) = @4( 23_std_out, 26_anonymous,)
+12: 28_stdoutptr = 27_fdopen_result
+13: move(27_fdopen_result)
+14: move(20_val)
+15: move(21_len)
+16: move(25_character_size)
+17: move(28_stdoutptr)
+18: receiver_Ssaid(29) = @6( 20_val, 21_len, 25_character_size, 28_stdoutptr,)
+19: 30_res = 29_fwrite_result
+20: drop(30_res)
+21: move(29_fwrite_result)
+22: move(23_std_out)
+23: 31_anonymous := "w"
+24: move(31_anonymous)
+25: receiver_Ssaid(32) = @4( 23_std_out, 31_anonymous,)
+26: 33_stdoutptrb = 32_fdopen_result
+27: move(32_fdopen_result)
+28: move(33_stdoutptrb)
+29: receiver_Ssaid(34) = @8( 33_stdoutptrb,)
+30: 35_resb = 34_fflush_result
+31: drop(35_resb)
+32: move(34_fflush_result)
 33: return
 
-fn 58:
-block_35
-0: 36_anonymous := "232"
-1: 37_bar = 36_anonymous
-2: drop(37_bar)
-3: move(36_anonymous)
-4: 38_anonymous := Int(60)
-5: 39_anonymous := Int(40)
-6: struct_init_result_Ssaid(40) = StructInit<26>[ 38_anonymous, 39_anonymous,]
-7: 41_aFoo = 40_struct_init_result
-8: drop(41_aFoo)
-9: move(40_struct_init_result)
-10: struct_field_read_resul_Ssaid(42) = Ssaid(41)_FieldRead.2
-11: struct_field_read_resul_Ssaid(43) = Ssaid(41)_FieldRead.3
-12: 44_@bin_op_result = 42_struct_field_result + 43_struct_field_result
-13: move(42_struct_field_result)
-14: move(43_struct_field_result)
-15: 45_sum = 44_@bin_op_result
-16: move(44_@bin_op_result)
-17: 46_anonymous := Int(59)
-18: 47_@bin_op_result = 45_sum > 46_anonymous
-19: move(45_sum)
-20: move(46_anonymous)
-21: if 47_@bin_op_result then 48_block
+fn 59:
+block_36
+0: 37_anonymous := "232"
+1: 38_bar = 37_anonymous
+2: drop(38_bar)
+3: move(37_anonymous)
+4: 39_anonymous := Int(60)
+5: 40_anonymous := Int(40)
+6: struct_init_result_Ssaid(41) = StructInit<28>[ 39_anonymous, 40_anonymous,]
+7: 42_29: aFoo = 41_struct_init_result
+8: move(41_struct_init_result)
+9: struct_field_read_resul_Ssaid(43) = Ssaid(42)_FieldRead.3
+10: struct_field_read_resul_Ssaid(44) = Ssaid(42)_FieldRead.4
+11: 45_@bin_op_result = 43_struct_field_result + 44_struct_field_result
+12: move(43_struct_field_result)
+13: move(44_struct_field_result)
+14: 46_sum = 45_@bin_op_result
+15: move(45_@bin_op_result)
+16: 47_anonymous := Int(59)
+17: 48_@bin_op_result = 46_sum > 47_anonymous
+18: move(46_sum)
+19: move(47_anonymous)
+20: if 48_@bin_op_result then 49_block
 
-block_48
-0: 49_anonymous := "struct fields sum is 6"
-1: move(49_anonymous)
-2: 50_anonymous := Int(22)
-3: move(50_anonymous)
-4: @33( 49_anonymous, 50_anonymous,)
-5: 51_anonymous := "\n"
-6: move(51_anonymous)
-7: 52_anonymous := Int(2)
-8: move(52_anonymous)
-9: @33( 51_anonymous, 52_anonymous,)
+block_49
+0: 50_anonymous := "struct fields sum is 6"
+1: move(50_anonymous)
+2: 51_anonymous := Int(22)
+3: move(51_anonymous)
+4: @33( 50_anonymous, 51_anonymous,)
+5: 52_anonymous := "\n"
+6: move(52_anonymous)
+7: 53_anonymous := Int(2)
+8: move(53_anonymous)
+9: @33( 52_anonymous, 53_anonymous,)
 
-block_53
+block_54
 0: return
